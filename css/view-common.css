@@ -1,0 +1,185 @@
+/* Rimuove il flash blu al tocco su mobile */
+.routine-card, .selector-item, .workout-card, .action-btn, .quick-btn, .fab, button {
+    -webkit-tap-highlight-color: transparent;
+}
+
+.routine-card .action-btn {
+    background: none;
+    border: none;
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 5px;
+    color: var(--text-main);
+    display: flex;
+    align-items: center;
+}
+
+.routine-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+/* Drag & Drop */
+.drag-handle {
+    cursor: grab;
+    padding: 10px;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    touch-action: none;
+    flex-shrink: 0;
+}
+
+.dragging-ghost {
+    position: fixed;
+    z-index: 1000;
+    pointer-events: none;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    opacity: 0.95;
+    transform: scale(1.02);
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+}
+
+.dragging-placeholder {
+    opacity: 0;
+}
+
+/* Truncation & Scrolling */
+.routine-card h3,
+.workout-card h3,
+.exercise-editor-card h3,
+.selector-item .exercise-name {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: block;
+    max-width: 100%;
+}
+
+.routine-click-area,
+.exercise-checkbox-wrapper,
+.exercise-checkbox-wrapper > div {
+    min-width: 0;
+}
+
+.routine-card h3.scrolling-text-once,
+.workout-card h3.scrolling-text-once,
+.exercise-editor-card h3.scrolling-text-once,
+.selector-item .exercise-name.scrolling-text-once {
+    text-overflow: clip !important;
+}
+
+.scroll-inner {
+    display: inline-block;
+    white-space: nowrap;
+    will-change: transform;
+    padding-right: 1px;
+}
+
+.scrolling-text-once .scroll-inner {
+    animation: scroll-text-once var(--scroll-duration, 8s) ease-in-out 1;
+}
+
+@keyframes scroll-text-once {
+    0%, 20% { transform: translateX(0); }
+    50%, 70% { transform: translateX(var(--scroll-offset)); }
+    100% { transform: translateX(0); }
+}
+
+/* Modals */
+.modal-overlay {
+    position: fixed;
+    top: -50px; left: 0; right: 0; bottom: -50px;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 2000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+}
+
+[data-theme="dark"] .modal-overlay {
+    background: rgba(0, 0, 0, 0.9);
+}
+
+[data-theme="gray"] .modal-overlay {
+    background: rgba(33, 33, 34, 0.8);
+}
+
+.modal-content {
+    background: var(--bg-card);
+    padding: 20px;
+    border-radius: 12px;
+    width: 100%;
+    max-width: 400px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+[data-theme="dark"] .modal-content, [data-theme="gray"] .modal-content {
+    border: 1px solid var(--border);
+}
+
+.modal-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+    justify-content: flex-end;
+}
+
+.modal-actions .danger-btn {
+    background-color: #e53e3e;
+    color: #ffffff;
+}
+
+.modal-actions .primary-btn,
+.modal-actions .secondary-btn {
+    font-weight: normal;
+}
+
+/* Shared Workout/Editor Components */
+.workout-set-row {
+    display: grid;
+    grid-template-columns: 30px 1.5fr 1fr 1fr 30px;
+    gap: 5px;
+    margin-bottom: 0;
+    height: 40px;
+    align-items: center;
+    padding: 0 5px;
+    border-radius: 6px;
+    transition: background-color 0.2s;
+}
+
+.set-number {
+    text-align: center;
+    font-weight: 700;
+    font-size: 1.2rem;
+    color: var(--text-muted);
+}
+
+.workout-input {
+    width: 100%;
+    padding: 5px;
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--text-main);
+    border-radius: 4px;
+    text-align: center;
+    font-size: 1.3rem;
+    height: 100%;
+}
+
+.workout-input:focus {
+    background: var(--input-bg);
+    outline: none;
+}
+
+.workout-input::placeholder {
+    opacity: 1;
+    color: var(--text-main);
+}

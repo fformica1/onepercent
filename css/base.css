@@ -1,0 +1,201 @@
+:root {
+    /* Light Theme (Default) */
+    --bg-body: #ffffff;
+    --bg-card: #ffffff;
+    --text-main: #000000;
+    --text-muted: #666666;
+    --primary: #000000;
+    --on-primary: #ffffff;
+    --border: #e0e0e0;
+    --input-bg: #ffffff;
+}
+
+[data-theme="dark"] {
+    /* Dark Theme */
+    --bg-body: #000000;
+    --bg-card: #000000;
+    --text-main: #ffffff;
+    --text-muted: #888888;
+    --primary: #ffffff;
+    --on-primary: #000000;
+    --border: #333333;
+    --input-bg: #000000;
+}
+
+[data-theme="gray"] {
+    /* Gray Theme (Dark Gray) */
+    --bg-body: #1c1c1e;
+    --bg-card: #1c1c1e;
+    --text-main: #f2f2f7;
+    --text-muted: #aeaeb2;
+    --primary: #f2f2f7;
+    --on-primary: #1c1c1e;
+    --border: #38383a;
+    --input-bg: #1c1c1e;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Poppins', sans-serif;
+    background-color: var(--bg-body);
+    color: var(--text-main);
+    line-height: 1.6;
+    transition: background-color 0.3s, color 0.3s;
+    overscroll-behavior-y: none; /* Previene il rimbalzo della pagina */
+
+    /* Rende il testo non selezionabile per un feeling più "native" */
+    -webkit-user-select: none; /* Safari */
+    -moz-user-select: none; /* Firefox */
+    -ms-user-select: none; /* IE 10+ */
+    user-select: none; /* Standard */
+}
+
+header {
+    background-color: var(--bg-body);
+    color: var(--text-main);
+    padding: 0.5rem;
+    text-align: center;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 100;
+    border-bottom: 1px solid var(--border);
+    height: 60px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+header h1 {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    margin: 0;
+}
+
+main {
+    padding: 80px 20px 80px 20px; /* Spazio inferiore spostato qui per evitare scroll inutile */
+    width: 100%;
+    min-height: 100vh;
+    background-color: var(--bg-body); /* Necessario per coprire il calendario */
+    position: relative;
+    z-index: 10;
+    transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), padding-top 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+/* Force Poppins everywhere */
+button, input, select, textarea, .workout-timer, .rest-timer-large {
+    font-family: 'Poppins', sans-serif !important;
+}
+
+/* Permette la selezione del testo all'interno degli input */
+input, textarea {
+    -webkit-user-select: text;
+    -moz-user-select: text;
+    -ms-user-select: text;
+    user-select: text;
+}
+
+/* Gestione Viste SPA */
+.view {
+    display: none;
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+main > .view {
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.view.active {
+    display: block;
+}
+
+.view.hidden {
+    display: none;
+}
+
+/* Utility universale per nascondere elementi (es. modali) */
+.hidden {
+    display: none !important;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* Nascondi header globale durante l'allenamento */
+body[data-view="workout"] #global-header {
+    display: none !important;
+}
+
+/* Reset padding main in workout (dove header è nascosto) */
+body[data-view="workout"] main {
+    padding-top: var(--workout-header-height, 175px); /* Spazio riservato per l'header fisso */
+}
+
+/* Adatta il padding in modalità sola lettura */
+body[data-view="workout"].workout-readonly main {
+    padding-top: var(--workout-header-height, 80px);
+}
+
+main.calendar-open {
+    padding-top: 10px;
+}
+
+body.no-scroll {
+    overflow: hidden;
+}
+
+#view-calendar {
+    position: fixed;
+    top: 60px; /* Subito sotto l'header */
+    left: 0;
+    width: 100%;
+    /* Altezza limitata all'area visibile quando aperto (window - 80px circa) */
+    height: calc(100vh - 140px); 
+    z-index: 1; /* Dietro al main */
+    background-color: var(--bg-body);
+    padding: 20px;
+    display: flex !important; /* Flex per gestire scroller e summary */
+    flex-direction: column;
+}
+
+/* Nasconde la scrollbar ovunque (Chrome, Safari, Opera) */
+::-webkit-scrollbar {
+    display: none;
+}
+
+/* Nasconde la scrollbar ovunque (Firefox, IE, Edge) */
+* {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+/* Dimmed Mode for Workout (Simula schermo spento/risparmio energetico) */
+body.dimmed-mode {
+    background-color: #000 !important;
+}
+
+body.dimmed-mode main {
+    background-color: #000 !important;
+}
+
+body.dimmed-mode #active-workout-content {
+    opacity: 0.05;
+    filter: grayscale(100%);
+    pointer-events: none;
+    transition: opacity 0.5s ease;
+}
+
+body.dimmed-mode .workout-header {
+    filter: brightness(0.5);
+    transition: filter 0.5s ease;
+}

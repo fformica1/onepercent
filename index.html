@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#1d3557">
+    <meta name="description" content="Logbook palestra minimale">
+    <title>OnePercent</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/view-common.css">
+    <link rel="stylesheet" href="css/view-home.css">
+    <link rel="stylesheet" href="css/view-plans.css">
+    <link rel="stylesheet" href="css/view-routines.css">
+    <link rel="stylesheet" href="css/view-workout.css">
+    <link rel="stylesheet" href="css/view-exercises.css">
+    <link rel="stylesheet" href="css/view-calendar.css">
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" href="favicon.png" type="image/png">
+    <link rel="apple-touch-icon" href="app-icon.png">
+</head>
+<body>
+    <header id="global-header">
+        <div style="display: flex; align-items: center;">
+            <button id="global-back-btn" class="back-btn" style="display:none;">←</button>
+            <button id="btn-settings" style="background:none;border:none;cursor:pointer;color:inherit; padding: 5px; display: none;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+            </button>
+        </div>
+        <h1>1%</h1>
+        <div id="header-spacer" style="width: 32px;"></div>
+    </header>
+
+    <main id="app">
+        <!-- VISTA: HOME (Lista Routine) -->
+        <div id="view-home" class="view active">
+            <p class="quote">Migliora l'1% ogni giorno.</p>
+            <div id="routines-list" class="card-list">
+                <!-- Le routine verranno inserite qui via JS -->
+                <p class="empty-state">Nessuna routine creata.</p>
+            </div>
+        </div>
+
+        <!-- VISTA: PIANI (Placeholder) -->
+        <div id="view-plans" class="view hidden"></div>
+
+        <!-- VISTA: IMPOSTAZIONI -->
+        <div id="view-settings" class="view hidden"></div>
+
+        <!-- VISTA: DETTAGLIO PIANO (Lista Routine del Piano) -->
+        <div id="view-plan-detail" class="view hidden"></div>
+
+        <!-- VISTA: EDITOR ROUTINE -->
+        <div id="view-routine-editor" class="view hidden"></div>
+
+        <!-- VISTA: SELETTORE ESERCIZI -->
+        <div id="view-exercise-selector" class="view hidden"></div>
+
+        <!-- VISTA: ALLENAMENTO ATTIVO (Placeholder) -->
+        <div id="view-workout" class="view hidden"></div>
+    </main>
+
+    <!-- Calendar View -->
+    <div id="view-calendar" class="view hidden"></div>
+
+    <!-- Exercise History Modal -->
+    <div id="exercise-history-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <h3 id="exercise-history-modal-title" style="margin-bottom: 15px;">Storico Esercizio</h3>
+            <div id="exercise-history-content">
+                <!-- History will be loaded here -->
+            </div>
+            <div class="modal-actions">
+                <button id="btn-close-exercise-history-modal" class="primary-btn">Chiudi</button>
+            </div>
+        </div>
+    </div>
+    <!-- Generic Confirmation Modal -->
+    <div id="confirm-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <h3 id="confirm-modal-title" style="margin-bottom: 15px;">Conferma Eliminazione</h3>
+            <p id="confirm-modal-text" style="margin-bottom: 20px;">Sei sicuro di voler procedere?</p>
+            <div class="modal-actions">
+                <button id="confirm-modal-cancel" class="secondary-btn">Annulla</button>
+                <button id="confirm-modal-confirm" class="primary-btn danger-btn">Elimina</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Floating Action Button -->
+    <button id="fab-action" class="fab" title="Aggiungi">
+        <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 0 24 24" width="24px" fill="currentColor"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+    </button>
+
+    <script src="js/state.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/view-calendar.js"></script>
+    <script src="js/view-home.js"></script>
+    <script src="js/view-plans.js"></script>
+    <script src="js/view-settings.js"></script>
+    <script src="js/view-routines.js"></script>
+    <script src="js/view-workout.js"></script>
+    <script src="js/app.js"></script>
+    <script>
+        // Gestione Navigazione Sistema (Back Button / Gesture)
+        window.addEventListener('popstate', (event) => {
+            const state = event.state;
+            if (!state) {
+                if (typeof renderHome === 'function') renderHome(true);
+                return;
+            }
+
+            switch (state.view) {
+                case 'home':
+                    renderHome(true);
+                    break;
+                case 'plans':
+                    renderPlans(true);
+                    break;
+                case 'planDetail':
+                    if (state.planId) {
+                        const plan = AppState.plans.find(p => p.id === state.planId);
+                        if (plan) renderPlanDetail(plan, true);
+                        else renderPlans(true);
+                    }
+                    break;
+                case 'settings':
+                    renderSettings(true);
+                    break;
+                case 'workout':
+                    renderWorkout(state.routineId, state.planId, true);
+                    break;
+                case 'routineEditor':
+                    renderRoutineEditor(state.routineId, state.planId, true);
+                    break;
+                case 'exerciseSelector':
+                    // Il selettore richiede callback che non possono essere salvate nello stato.
+                    // Se si arriva qui (es. navigazione avanti), torniamo indietro per sicurezza.
+                    history.back();
+                    break;
+            }
+        });
+
+        // Imposta lo stato iniziale all'avvio
+        window.addEventListener('load', () => {
+            history.replaceState({view: 'home'}, 'Home', '#home');
+        });
+    </script>
+</body>
+</html>
