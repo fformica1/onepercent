@@ -317,7 +317,7 @@ function renderPlanDetail(plan, fromHistory = false) {
             saveAppData();
             document.getElementById('create-routine-modal').classList.add('hidden');
             document.body.classList.remove('no-scroll');
-            renderRoutineEditor(newRoutine.id, plan.id);
+            renderPlanDetail(plan);
         }
     };
 

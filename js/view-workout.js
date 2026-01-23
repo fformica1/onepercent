@@ -7,7 +7,7 @@ let wakeLock = null;
 let dimmingTimer = null;
 let restEndTime = 0;
 let _cardToScrollToAfterRest = null;
-let persistentNotification = null; // Riferimento per la notifica persistente
+let lastNotificationData = { title: '', body: '' }; // Per evitare aggiornamenti inutili
 try {
     const savedSession = localStorage.getItem('active_workout_session');
     if (savedSession) currentWorkoutSession = JSON.parse(savedSession);
@@ -110,13 +110,13 @@ function playTimerFinishedSound() {
 }
 
 function requestNotificationPermission() {
-    if (localStorage.getItem('notifications_enabled') === 'true' && 'Notification' in window && Notification.permission !== 'granted' && Notification.permission !== 'denied') {
+    if (localStorage.getItem('notifications_enabled') !== 'false' && 'Notification' in window && Notification.permission !== 'granted' && Notification.permission !== 'denied') {
         Notification.requestPermission();
     }
 }
 
 async function sendRestNotification() {
-    if (localStorage.getItem('notifications_enabled') === 'true' && 'Notification' in window && Notification.permission === 'granted') {
+    if (localStorage.getItem('notifications_enabled') !== 'false' && 'Notification' in window && Notification.permission === 'granted') {
         try {
             const body = getNextSetInfo();
             
@@ -153,7 +153,7 @@ function getNextSetInfo() {
 
 async function updatePersistentNotification() {
     // Aggiunto controllo preferenza utente (notifications_enabled)
-    if (localStorage.getItem('notifications_enabled') !== 'true' || 
+    if (localStorage.getItem('notifications_enabled') === 'false' || 
         !('Notification' in window) || 
         Notification.permission !== 'granted') return;
     
@@ -173,6 +173,10 @@ async function updatePersistentNotification() {
     }
 
     const body = getNextSetInfo();
+
+    // OTTIMIZZAZIONE: Non aggiornare se il contenuto è identico (risparmia batteria e evita flickering su Android)
+    if (title === lastNotificationData.title && body === lastNotificationData.body) return;
+    lastNotificationData = { title, body };
 
     try {
         if ('serviceWorker' in navigator) {
@@ -693,6 +697,7 @@ function renderWorkout(routineId, planId, fromHistory = false) {
     // Funzione Avvio Sessione
     const startSession = () => {
         ensureSessionInitialized();
+        lastNotificationData = { title: '', body: '' }; // Reset cache notifiche
         requestNotificationPermission();
         const actionBtn = document.getElementById('btn-workout-action');
         isWorkoutStarted = true;
