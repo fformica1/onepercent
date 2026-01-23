@@ -83,6 +83,36 @@ header h1 {
     margin: 0;
 }
 
+.header-left-actions {
+    position: relative;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.header-icon-btn {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.8);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    background: none;
+    border: none;
+    color: inherit;
+    cursor: pointer;
+    padding: 0;
+}
+
+.header-icon-btn.visible {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translate(-50%, -50%) scale(1);
+}
+
 main {
     padding: 80px 20px 80px 20px; /* Spazio inferiore spostato qui per evitare scroll inutile */
     width: 100%;
@@ -195,10 +225,18 @@ body.dimmed-mode main {
 }
 
 body.dimmed-mode #active-workout-content {
-    opacity: 0.05;
+    opacity: 0.15; /* Aumentata visibilità (era 0.05) */
     filter: grayscale(100%);
     pointer-events: none;
     transition: opacity 0.5s ease;
+}
+
+/* Overlay invisibile per catturare il tocco di risveglio */
+body.dimmed-mode::after {
+    content: "";
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    z-index: 99999; /* Sopra a tutto */
 }
 
 body.dimmed-mode .workout-header {

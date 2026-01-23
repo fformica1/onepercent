@@ -148,8 +148,8 @@ function renderCalendar() {
             const dateKey = dateObj.toDateString();
             const hasWorkout = !!historyMap[dateKey];
             
-            // Aggiungi data-date per il click
-            const dateAttr = hasWorkout ? `data-date="${dateKey}"` : '';
+            // Aggiungi data-date per il click (sempre)
+            const dateAttr = `data-date="${dateKey}"`;
             html += `<div class="calendar-day ${isToday ? 'today' : ''} ${hasWorkout ? 'has-workout' : ''}" ${dateAttr}>${day}</div>`;
         }
 
@@ -180,8 +180,8 @@ function renderCalendar() {
         });
     }
 
-    // Event Listener per i giorni con allenamento
-    container.querySelectorAll('.calendar-day.has-workout').forEach(dayEl => {
+    // Event Listener per TUTTI i giorni
+    container.querySelectorAll('.calendar-day').forEach(dayEl => {
         dayEl.addEventListener('click', (e) => {
             // Rimuovi selezione precedente
             container.querySelectorAll('.calendar-day.selected').forEach(el => el.classList.remove('selected'));
@@ -189,9 +189,9 @@ function renderCalendar() {
 
             const dateKey = dayEl.dataset.date;
             const sessions = historyMap[dateKey]; // Ora è un array
+            const summaryContainer = document.getElementById('calendar-summary-container');
             
             if (sessions && sessions.length > 0) {
-                const summaryContainer = document.getElementById('calendar-summary-container');
                 
                 // Ordina le sessioni dalla più recente alla meno recente
                 sessions.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
@@ -210,7 +210,7 @@ function renderCalendar() {
                         const reps = ex.series.length > 0 ? ex.series[0].reps : '-';
                         const weights = ex.series.map(s => (s.weight !== undefined && s.weight !== '') ? `${s.weight}kg` : '-').join(', ');
                         
-                        return `<li><span class="summary-ex-name">${ex.name}</span><span class="summary-ex-data">: ${sets} x ${reps} <span style="color:var(--text-muted); font-size:0.85rem;">(${weights})</span></span></li>`;
+                        return `<li><span class="summary-ex-name">${ex.name}</span><span class="summary-ex-data">: ${sets} x ${reps} <span class="summary-weights">(${weights})</span></span></li>`;
                     }).join('');
 
                     return `
@@ -227,7 +227,15 @@ function renderCalendar() {
                 }).join('');
 
                 summaryContainer.innerHTML = cardsHtml;
+            } else {
+                summaryContainer.innerHTML = '<p class="empty-state" style="padding: 20px; text-align: center; color: var(--text-muted); font-size: 0.9rem;">Nessun allenamento.</p>';
             }
         });
     });
+
+    // Seleziona oggi di default
+    const todayEl = container.querySelector('.calendar-day.today');
+    if (todayEl) {
+        todayEl.click();
+    }
 }

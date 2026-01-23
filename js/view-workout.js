@@ -7,7 +7,6 @@ let wakeLock = null;
 let dimmingTimer = null;
 let restEndTime = 0;
 let _cardToScrollToAfterRest = null;
-let lastNotificationData = { title: '', body: '' }; // Per evitare aggiornamenti inutili
 try {
     const savedSession = localStorage.getItem('active_workout_session');
     if (savedSession) currentWorkoutSession = JSON.parse(savedSession);
@@ -109,101 +108,6 @@ function playTimerFinishedSound() {
     playBeep(now + 0.15); // Secondo beep ravvicinato
 }
 
-function requestNotificationPermission() {
-    if (localStorage.getItem('notifications_enabled') !== 'false' && 'Notification' in window && Notification.permission !== 'granted' && Notification.permission !== 'denied') {
-        Notification.requestPermission();
-    }
-}
-
-async function sendRestNotification() {
-    if (localStorage.getItem('notifications_enabled') !== 'false' && 'Notification' in window && Notification.permission === 'granted') {
-        try {
-            const body = getNextSetInfo();
-            
-            if ('serviceWorker' in navigator) {
-                const registration = await navigator.serviceWorker.ready;
-                await registration.showNotification("Recupero Terminato", {
-                    body: body,
-                    icon: 'app-icon.png',
-                    tag: 'workout-persistent',
-                    renotify: true, // Vibra/Suona quando finisce il recupero
-                    silent: false
-                });
-            }
-        } catch (e) { console.error(e); }
-    }
-}
-
-function getNextSetInfo() {
-    const cards = document.querySelectorAll('#active-workout-content .workout-card');
-    for (const card of cards) {
-        const checkboxes = Array.from(card.querySelectorAll('.workout-checkbox'));
-        const unchecked = checkboxes.find(cb => !cb.checked);
-        if (unchecked) {
-            const exerciseName = card.querySelector('h3').textContent;
-            const row = unchecked.closest('.workout-set-row');
-            // Preferisci il valore inserito (sessione), altrimenti il placeholder (target)
-            const weight = row.querySelector('.input-weight').value || row.querySelector('.input-weight').placeholder || '-';
-            const reps = row.querySelector('.input-reps').value || row.querySelector('.input-reps').placeholder || '-';
-            return `➜ ${exerciseName}: ${weight}kg x ${reps}`;
-        }
-    }
-    return "Allenamento Completato";
-}
-
-async function updatePersistentNotification() {
-    // Aggiunto controllo preferenza utente (notifications_enabled)
-    if (localStorage.getItem('notifications_enabled') === 'false' || 
-        !('Notification' in window) || 
-        Notification.permission !== 'granted') return;
-    
-    // Titolo: Se c'è recupero mostra il timer, altrimenti il nome App
-    let title = "OnePercent";
-    const routineNameEl = document.querySelector('.workout-routine-name');
-    if (routineNameEl) {
-        title = routineNameEl.textContent;
-    } else if (currentWorkoutSession && currentWorkoutSession.originalRoutineJSON) {
-        try { title = JSON.parse(currentWorkoutSession.originalRoutineJSON).name; } catch(e){}
-    }
-
-    if (currentRestSeconds > 0) {
-        title = `Recupero: ${formatRestTime(currentRestSeconds)}`;
-    } else if (currentWorkoutSession && currentWorkoutSession.restFinished) {
-        title = "Recupero Terminato";
-    }
-
-    const body = getNextSetInfo();
-
-    // OTTIMIZZAZIONE: Non aggiornare se il contenuto è identico (risparmia batteria e evita flickering su Android)
-    if (title === lastNotificationData.title && body === lastNotificationData.body) return;
-    lastNotificationData = { title, body };
-
-    try {
-        if ('serviceWorker' in navigator) {
-            const registration = await navigator.serviceWorker.ready;
-            await registration.showNotification(title, {
-                body: body,
-                icon: 'app-icon.png', // Usa l'icona dell'app esistente
-                tag: 'workout-persistent', // Fondamentale: sovrascrive la precedente
-                renotify: false,           // Fondamentale: NON suona/vibra all'aggiornamento del timer
-                silent: true               // Android 8+: forza il silenzioso per gli aggiornamenti
-            });
-        }
-    } catch (e) { console.error("Errore notifica persistente:", e); }
-}
-
-async function closePersistentNotification() {
-    if ('serviceWorker' in navigator) {
-        try {
-            const registration = await navigator.serviceWorker.ready;
-            const notifications = await registration.getNotifications({tag: 'workout-persistent'});
-            for (let notification of notifications) {
-                notification.close();
-            }
-        } catch (e) { console.error(e); }
-    }
-}
-
 function startRestTimer(seconds, nextCardToFocus = null) {
     _cardToScrollToAfterRest = nextCardToFocus;
 
@@ -241,7 +145,6 @@ function startRestTimer(seconds, nextCardToFocus = null) {
                 currentRestSeconds = 0;
                 clearInterval(restInterval);
                 playTimerFinishedSound();
-                sendRestNotification();
                 if (header) header.classList.add('rest-finished');
                 if (currentWorkoutSession) {
                     currentWorkoutSession.restFinished = true;
@@ -373,7 +276,6 @@ function disableDimming() {
     document.removeEventListener('click', resetDimmingTimer);
     document.removeEventListener('touchstart', resetDimmingTimer);
     document.removeEventListener('scroll', resetDimmingTimer);
-    document.removeEventListener('mousemove', resetDimmingTimer);
     if (dimmingTimer) clearTimeout(dimmingTimer);
     document.body.classList.remove('dimmed-mode');
 }
@@ -402,7 +304,6 @@ function enableDimming() {
     document.addEventListener('click', resetDimmingTimer);
     document.addEventListener('touchstart', resetDimmingTimer);
     document.addEventListener('scroll', resetDimmingTimer);
-    document.addEventListener('mousemove', resetDimmingTimer);
     resetDimmingTimer();
 }
 
@@ -433,7 +334,14 @@ function renderWorkout(routineId, planId, fromHistory = false) {
     const routine = plan ? plan.routines.find(r => r.id === routineId) : null;
 
     // Check se c'è una sessione attiva GLOBALE
-    const isSessionActive = !!currentWorkoutSession;
+    // FIX: Considera attiva solo se ha un startTime (allenamento effettivamente iniziato)
+    const isSessionActive = !!currentWorkoutSession && !!currentWorkoutSession.startTime;
+
+    // FIX: Se c'è una sessione "bozza" (senza startTime) di un'altra routine, puliscila per evitare conflitti
+    if (currentWorkoutSession && !currentWorkoutSession.startTime && (currentWorkoutSession.routineId !== routineId || currentWorkoutSession.planId !== planId)) {
+        currentWorkoutSession = null;
+        localStorage.removeItem('active_workout_session');
+    }
 
     // Check se stiamo riprendendo la sessione attiva SPECIFICA (quella corrente)
     const isResuming = isSessionActive && 
@@ -652,7 +560,6 @@ function renderWorkout(routineId, planId, fromHistory = false) {
             const h = Math.floor(diff / 3600);
             const m = Math.floor((diff % 3600) / 60);
             timerEl.textContent = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
-            updatePersistentNotification(); // Aggiorna la notifica ogni secondo
         };
         update();
         activeWorkoutInterval = setInterval(() => {
@@ -697,8 +604,6 @@ function renderWorkout(routineId, planId, fromHistory = false) {
     // Funzione Avvio Sessione
     const startSession = () => {
         ensureSessionInitialized();
-        lastNotificationData = { title: '', body: '' }; // Reset cache notifiche
-        requestNotificationPermission();
         const actionBtn = document.getElementById('btn-workout-action');
         isWorkoutStarted = true;
         actionBtn.textContent = "Fine";
@@ -1003,6 +908,24 @@ function renderWorkout(routineId, planId, fromHistory = false) {
     document.getElementById('btn-back-workout').onclick = () => {
         disableDimming();
         deactivateWakeLock();
+
+        // FIX: Se l'allenamento NON è iniziato (è solo una bozza), annulla le modifiche ed esci
+        if (currentWorkoutSession && !currentWorkoutSession.startTime) {
+            if (currentWorkoutSession.originalRoutineJSON) {
+                const original = JSON.parse(currentWorkoutSession.originalRoutineJSON);
+                const p = AppState.plans.find(p => p.id === planId);
+                if (p) {
+                    const rIndex = p.routines.findIndex(r => r.id === routineId);
+                    if (rIndex !== -1) {
+                        p.routines[rIndex] = original;
+                        saveAppData();
+                    }
+                }
+            }
+            currentWorkoutSession = null;
+            localStorage.removeItem('active_workout_session');
+        }
+
         history.back();
     };
 
@@ -1041,7 +964,6 @@ function renderWorkout(routineId, planId, fromHistory = false) {
         clearInterval(activeWorkoutInterval);
         if (restInterval) clearInterval(restInterval);
         currentWorkoutSession = null;
-        closePersistentNotification();
 
         let hasAnyCompletedSeries = false;
         // Save historical data for each exercise in the routine
@@ -1114,7 +1036,6 @@ function renderWorkout(routineId, planId, fromHistory = false) {
         clearInterval(activeWorkoutInterval);
         if (restInterval) clearInterval(restInterval);
         currentWorkoutSession = null;
-        closePersistentNotification();
         localStorage.removeItem('active_workout_session');
         history.back(); // Torna alla Home pulita
     };

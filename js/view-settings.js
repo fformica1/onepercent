@@ -4,7 +4,7 @@ function renderSettings(fromHistory = false) {
         history.pushState({view: 'settings'}, 'Impostazioni', '#settings');
     }
 
-    document.getElementById('btn-settings').style.display = 'none';
+    document.getElementById('btn-settings').classList.remove('visible');
     const container = Views.settings;
     
     const moonIcon = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>';
@@ -74,9 +74,6 @@ function renderSettings(fromHistory = false) {
     document.getElementById('setting-notif-card').addEventListener('click', () => {
         const newState = !notifEnabled;
         localStorage.setItem('notifications_enabled', newState);
-        if (newState && 'Notification' in window) {
-            Notification.requestPermission();
-        }
         renderSettings(true); // Ricarica senza aggiungere alla history
     });
 

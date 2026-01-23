@@ -58,13 +58,19 @@
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    transition: transform 0.2s ease-in-out, background-color 0.2s;
+    transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), opacity 0.3s ease, background-color 0.2s;
     z-index: 1000;
 }
 
 .fab:active {
     transform: scale(0.95);
     opacity: 0.9;
+}
+
+.fab.fab-hidden {
+    transform: scale(0);
+    opacity: 0;
+    pointer-events: none;
 }
 
 /* Forms */

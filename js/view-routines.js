@@ -39,7 +39,7 @@ function renderExerciseSelector(onConfirm, onCancel, fromHistory = false) {
         history.pushState({view: 'exerciseSelector'}, 'Seleziona Esercizi', '#exerciseSelector');
     }
 
-    document.getElementById('btn-settings').style.display = 'none';
+    document.getElementById('btn-settings').classList.remove('visible');
     const container = Views.exerciseSelector;
     let selectedExercises = [];
     const MUSCLE_GROUPS = ['Tutti', 'Addome', 'Bicipiti', 'Dorso', 'Femorali', 'Glutei', 'Petto', 'Polpacci', 'Quadricipiti', 'Spalle', 'Tricipiti', 'Altro'];
@@ -344,7 +344,7 @@ function renderRoutineEditor(routineId, planId, fromHistory = false) {
         history.pushState({view: 'routineEditor', routineId, planId}, 'Editor Routine', '#routineEditor');
     }
 
-    document.getElementById('btn-settings').style.display = 'none';
+    document.getElementById('btn-settings').classList.remove('visible');
     const container = Views.routineEditor;
     const plan = AppState.plans.find(p => p.id === planId);
     if (!plan) return; // Safety check
@@ -606,6 +606,18 @@ function renderRoutineEditor(routineId, planId, fromHistory = false) {
     };
 
     setFabAction(fabHandler);
+
+    // Previene la chiusura della tastiera quando si usano i pulsanti +/-
+    const preventFocusLoss = (e) => {
+        if (e.target.classList.contains('btn-add-set') || e.target.classList.contains('btn-remove-set')) {
+            e.preventDefault();
+            if (e.type === 'touchstart') {
+                e.target.click();
+            }
+        }
+    };
+    exercisesContainer.addEventListener('mousedown', preventFocusLoss);
+    exercisesContainer.addEventListener('touchstart', preventFocusLoss, { passive: false });
 
     exercisesContainer.addEventListener('click', (e) => {
         const deleteBtn = e.target.closest('.delete-exercise-btn');

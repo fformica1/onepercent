@@ -65,7 +65,7 @@ function renderPlanDetail(plan, fromHistory = false) {
         history.pushState({view: 'planDetail', planId: plan.id}, plan.name, '#planDetail');
     }
 
-    document.getElementById('btn-settings').style.display = 'none';
+    document.getElementById('btn-settings').classList.remove('visible');
     const container = Views.planDetail;
 
     // Cleanup modali precedenti se presenti nel body
@@ -351,7 +351,7 @@ function renderPlans(fromHistory = false) {
         history.pushState({view: 'plans'}, 'Piani', '#plans');
     }
 
-    document.getElementById('btn-settings').style.display = 'none';
+    document.getElementById('btn-settings').classList.remove('visible');
     const plansContainer = Views.plans;
 
     // Cleanup modali precedenti se presenti nel body

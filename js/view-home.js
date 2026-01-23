@@ -6,13 +6,19 @@ function renderHome(fromHistory = false) {
     document.querySelector('main').style.transform = '';
     document.querySelector('main').classList.remove('calendar-open');
     document.body.classList.remove('no-scroll');
+    const fab = document.getElementById('fab-action');
+    if(fab) {
+        fab.classList.remove('fab-hidden');
+        fab.style.transform = '';
+    }
 
     if (!fromHistory) {
         history.pushState({view: 'home'}, 'Home', '#home');
     }
     switchView('home');
 
-    document.getElementById('btn-settings').style.display = 'block';
+    const settingsBtn = document.getElementById('btn-settings');
+    if(settingsBtn) settingsBtn.classList.add('visible');
     
     // Pulizia listener precedenti se presenti
     if (homeDragHandlers) {
@@ -89,6 +95,28 @@ function renderHome(fromHistory = false) {
         // MAX_DRAG dinamico: altezza finestra - 80px (lascia visibile solo la maniglia in basso)
         const MAX_DRAG = window.innerHeight - 80;
 
+        const closeCalendarState = () => {
+            mainEl.style.transform = `translateY(0px)`;
+            mainEl.classList.remove('calendar-open');
+            document.body.classList.remove('no-scroll');
+            const fab = document.getElementById('fab-action');
+            if(fab) fab.style.transform = `translateY(0px)`;
+            const settingsBtn = document.getElementById('btn-settings');
+            if(settingsBtn) settingsBtn.classList.add('visible');
+            setBackAction(null);
+        };
+
+        const openCalendarState = () => {
+            mainEl.style.transform = `translateY(${MAX_DRAG}px)`;
+            mainEl.classList.add('calendar-open');
+            document.body.classList.add('no-scroll');
+            const fab = document.getElementById('fab-action');
+            if(fab) fab.style.transform = `translateY(${MAX_DRAG}px)`;
+            const settingsBtn = document.getElementById('btn-settings');
+            if(settingsBtn) settingsBtn.classList.remove('visible');
+            setBackAction(closeCalendarState);
+        };
+
         // Inizializza calendario (nascosto sotto)
         renderCalendar();
 
@@ -103,6 +131,8 @@ function renderHome(fromHistory = false) {
             isDragging = true;
             wasDragged = false;
             mainEl.style.transition = 'none'; // Rimuovi transizione durante il drag
+            const fab = document.getElementById('fab-action');
+            if (fab) fab.style.transition = 'none';
         }, { passive: false });
 
         const onTouchMove = (e) => {
@@ -116,12 +146,16 @@ function renderHome(fromHistory = false) {
             if (delta > MAX_DRAG) delta = MAX_DRAG; // Limite rigido
 
             mainEl.style.transform = `translateY(${delta}px)`;
+            const fab = document.getElementById('fab-action');
+            if (fab) fab.style.transform = `translateY(${delta}px)`;
         };
 
         const onTouchEnd = () => {
             if (!isDragging) return;
             isDragging = false;
             mainEl.style.transition = 'transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1)';
+            const fab = document.getElementById('fab-action');
+            if (fab) fab.style.transition = '';
             
             const currentTransform = new WebKitCSSMatrix(window.getComputedStyle(mainEl).transform).m42;
             
@@ -131,21 +165,10 @@ function renderHome(fromHistory = false) {
             const isOpen = mainEl.classList.contains('calendar-open');
             const threshold = isOpen ? 0.8 : 0.2;
 
-            const fab = document.getElementById('fab-action');
-            const settingsBtn = document.getElementById('btn-settings');
-
             if (currentTransform > MAX_DRAG * threshold) {
-                mainEl.style.transform = `translateY(${MAX_DRAG}px)`;
-                mainEl.classList.add('calendar-open');
-                document.body.classList.add('no-scroll');
-                fab.style.display = 'none';
-                settingsBtn.style.display = 'none';
+                openCalendarState();
             } else {
-                mainEl.style.transform = `translateY(0px)`;
-                mainEl.classList.remove('calendar-open');
-                document.body.classList.remove('no-scroll');
-                fab.style.display = 'block';
-                settingsBtn.style.display = 'block';
+                closeCalendarState();
             }
         };
 
@@ -156,22 +179,14 @@ function renderHome(fromHistory = false) {
 
             const isClosed = !mainEl.classList.contains('calendar-open');
             const fab = document.getElementById('fab-action');
-            const settingsBtn = document.getElementById('btn-settings');
             
             mainEl.style.transition = 'transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1)';
+            if (fab) fab.style.transition = '';
 
             if (isClosed) {
-                mainEl.style.transform = `translateY(${MAX_DRAG}px)`;
-                mainEl.classList.add('calendar-open');
-                document.body.classList.add('no-scroll');
-                if(fab) fab.style.display = 'none';
-                if(settingsBtn) settingsBtn.style.display = 'none';
+                openCalendarState();
             } else {
-                mainEl.style.transform = `translateY(0px)`;
-                mainEl.classList.remove('calendar-open');
-                document.body.classList.remove('no-scroll');
-                if(fab) fab.style.display = 'block';
-                if(settingsBtn) settingsBtn.style.display = 'block';
+                closeCalendarState();
             }
         });
 

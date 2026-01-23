@@ -69,14 +69,11 @@ function toggleTheme() {
 // --- GESTIONE BACK BUTTON GLOBALE ---
 function setBackAction(action) {
     const btn = document.getElementById('global-back-btn');
-    const spacer = document.getElementById('header-spacer');
     if (action) {
-        btn.style.display = 'block';
-        if(spacer) spacer.style.display = 'none';
+        btn.classList.add('visible');
         btn.onclick = action;
     } else {
-        btn.style.display = 'none';
-        if(spacer) spacer.style.display = 'block';
+        btn.classList.remove('visible');
         btn.onclick = null;
     }
 }

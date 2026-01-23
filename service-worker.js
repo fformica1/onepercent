@@ -18,7 +18,7 @@ const ASSETS_TO_CACHE = [
     './js/view-plans.js',
     './js/view-settings.js',
     './js/view-routines.js',
-    './js/view-workout.js'
+    './js/view-workout.js',
     './w-notification-icon.png',
     './notification-icon.png'
 ];
