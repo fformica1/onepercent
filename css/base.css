@@ -40,6 +40,10 @@
     padding: 0;
 }
 
+html {
+    overscroll-behavior-y: none;
+}
+
 body {
     font-family: 'Poppins', sans-serif;
     background-color: var(--bg-body);
@@ -58,7 +62,7 @@ body {
 header {
     background-color: var(--bg-body);
     color: var(--text-main);
-    padding: 0.5rem;
+    padding: 0 20px;
     text-align: center;
     position: fixed;
     top: 0;
@@ -139,6 +143,8 @@ body[data-view="workout"] #global-header {
 /* Reset padding main in workout (dove header è nascosto) */
 body[data-view="workout"] main {
     padding-top: var(--workout-header-height, 175px); /* Spazio riservato per l'header fisso */
+    padding-left: 0;
+    padding-right: 0;
 }
 
 /* Adatta il padding in modalità sola lettura */

@@ -124,11 +124,17 @@ function renderHome(fromHistory = false) {
             mainEl.style.transition = 'transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1)';
             
             const currentTransform = new WebKitCSSMatrix(window.getComputedStyle(mainEl).transform).m42;
-            // Snap: se trascinato oltre 1/4 dell'altezza, vai giù tutto, altrimenti torna su
+            
+            // Logica di Snap intelligente:
+            // Se è aperto, basta trascinare su del 20% per chiudere (soglia 0.8).
+            // Se è chiuso, basta trascinare giù del 20% per aprire (soglia 0.2).
+            const isOpen = mainEl.classList.contains('calendar-open');
+            const threshold = isOpen ? 0.8 : 0.2;
+
             const fab = document.getElementById('fab-action');
             const settingsBtn = document.getElementById('btn-settings');
 
-            if (currentTransform > MAX_DRAG / 4) {
+            if (currentTransform > MAX_DRAG * threshold) {
                 mainEl.style.transform = `translateY(${MAX_DRAG}px)`;
                 mainEl.classList.add('calendar-open');
                 document.body.classList.add('no-scroll');

@@ -19,6 +19,8 @@ const ASSETS_TO_CACHE = [
     './js/view-settings.js',
     './js/view-routines.js',
     './js/view-workout.js'
+    './w-notification-icon.png',
+    './notification-icon.png'
 ];
 
 // Installazione: cache delle risorse statiche

@@ -115,17 +115,21 @@ function requestNotificationPermission() {
     }
 }
 
-function sendRestNotification() {
+async function sendRestNotification() {
     if (localStorage.getItem('notifications_enabled') === 'true' && 'Notification' in window && Notification.permission === 'granted') {
         try {
             const body = getNextSetInfo();
-            const n = new Notification("Recupero Terminato", {
-                body: body,
-                tag: 'workout-persistent', // Stesso tag della persistente per unificarle
-                renotify: false,
-                silent: true
-            });
-            n.onclick = () => { window.focus(); }; // Non chiudiamo, lasciamo che rimanga persistente
+            
+            if ('serviceWorker' in navigator) {
+                const registration = await navigator.serviceWorker.ready;
+                await registration.showNotification("Recupero Terminato", {
+                    body: body,
+                    icon: 'app-icon.png',
+                    tag: 'workout-persistent',
+                    renotify: true, // Vibra/Suona quando finisce il recupero
+                    silent: false
+                });
+            }
         } catch (e) { console.error(e); }
     }
 }
@@ -147,7 +151,7 @@ function getNextSetInfo() {
     return "Allenamento Completato";
 }
 
-function updatePersistentNotification() {
+async function updatePersistentNotification() {
     // Aggiunto controllo preferenza utente (notifications_enabled)
     if (localStorage.getItem('notifications_enabled') !== 'true' || 
         !('Notification' in window) || 
@@ -171,19 +175,29 @@ function updatePersistentNotification() {
     const body = getNextSetInfo();
 
     try {
-        persistentNotification = new Notification(title, {
-            body: body,
-            icon: 'notification-icon.png',
-            tag: 'workout-persistent', // Fondamentale: sovrascrive la precedente
-            renotify: false,           // Fondamentale: NON suona/vibra all'aggiornamento
-            silent: true               // Android 8+: forza il silenzioso
-        });
-        persistentNotification.onclick = () => { window.focus(); };
+        if ('serviceWorker' in navigator) {
+            const registration = await navigator.serviceWorker.ready;
+            await registration.showNotification(title, {
+                body: body,
+                icon: 'app-icon.png', // Usa l'icona dell'app esistente
+                tag: 'workout-persistent', // Fondamentale: sovrascrive la precedente
+                renotify: false,           // Fondamentale: NON suona/vibra all'aggiornamento del timer
+                silent: true               // Android 8+: forza il silenzioso per gli aggiornamenti
+            });
+        }
     } catch (e) { console.error("Errore notifica persistente:", e); }
 }
 
-function closePersistentNotification() {
-    if (persistentNotification) persistentNotification.close();
+async function closePersistentNotification() {
+    if ('serviceWorker' in navigator) {
+        try {
+            const registration = await navigator.serviceWorker.ready;
+            const notifications = await registration.getNotifications({tag: 'workout-persistent'});
+            for (let notification of notifications) {
+                notification.close();
+            }
+        } catch (e) { console.error(e); }
+    }
 }
 
 function startRestTimer(seconds, nextCardToFocus = null) {
@@ -222,7 +236,6 @@ function startRestTimer(seconds, nextCardToFocus = null) {
             if (currentRestSeconds <= 0) {
                 currentRestSeconds = 0;
                 clearInterval(restInterval);
-                if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
                 playTimerFinishedSound();
                 sendRestNotification();
                 if (header) header.classList.add('rest-finished');
@@ -558,7 +571,7 @@ function renderWorkout(routineId, planId, fromHistory = false) {
     container.innerHTML = `
         <div class="workout-header">
             <div class="workout-header-top">
-                <button id="btn-back-workout" class="back-btn" style="margin-right:10px;">←</button>
+                <button id="btn-back-workout" class="back-btn" style="margin-right:0; padding-right:5px;">←</button>
                 <h2 class="workout-routine-name" style="flex-grow: 1;">${routine.name}</h2>
                 <div style="display: flex; align-items: center; gap: 10px;">
                     <div id="workout-timer" class="workout-timer">00:00</div>

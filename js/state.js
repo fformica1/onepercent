@@ -164,7 +164,7 @@ const AppState = {
     plans: plans,
     exercises: exercises,
     activePlanId: activePlanId,
-    theme: localStorage.getItem('gym_theme') || 'light',
+    theme: localStorage.getItem('gym_theme') || 'gray',
     currentView: 'home'
 };
 

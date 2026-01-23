@@ -96,7 +96,7 @@
     left: 50%;
     transform: translateX(-50%);
     z-index: 900;
-    width: 55%;
+    width: calc(100% - 180px);
     max-width: 400px;
     animation: slideUp 0.3s ease-out;
 }

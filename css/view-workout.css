@@ -27,7 +27,7 @@
 .workout-header {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 0;
     border-bottom: 1px solid var(--border);
     position: fixed;
     top: 0;
@@ -36,7 +36,7 @@
     background-color: var(--bg-body);
     z-index: 100;
     margin: 0;
-    padding: 20px;
+    padding: 0;
     box-shadow: 0 2px 5px rgba(0,0,0,0.05);
 }
 
@@ -47,7 +47,7 @@ body.workout-readonly .workout-header {
 }
 
 body.workout-readonly .workout-header-top {
-    padding: 0 1rem;
+    padding: 0 20px;
 }
 
 body.workout-readonly .workout-routine-name {
@@ -92,6 +92,8 @@ body.workout-readonly .workout-timer {
     justify-content: space-between;
     align-items: center;
     width: 100%;
+    height: 60px;
+    padding: 0 20px;
 }
 
 .workout-routine-name {
@@ -105,7 +107,7 @@ body.workout-readonly .workout-timer {
 }
 
 .workout-timer {
-    font-size: 1.8rem;
+    font-size: 1.4rem;
     font-weight: bold;
     color: var(--primary);
     line-height: 1;
@@ -133,6 +135,7 @@ body.workout-readonly .workout-timer {
     justify-content: space-between;
     align-items: center;
     width: 100%;
+    padding: 0 20px 15px 20px;
 }
 
 .rest-timer-controls {
@@ -142,7 +145,7 @@ body.workout-readonly .workout-timer {
 }
 
 .rest-timer-large {
-    font-size: 3.5rem;
+    font-size: 3rem;
     font-weight: bold;
     text-align: left;
     color: var(--text-main);
@@ -167,7 +170,7 @@ body.workout-readonly .workout-timer {
 
 .workout-sets-header {
     display: grid;
-    grid-template-columns: 30px 1.5fr 1fr 1fr 30px;
+    grid-template-columns: 30px 0.9fr 1.1fr 1.1fr 30px;
     gap: 5px;
     margin-bottom: 8px;
     font-weight: 700;
@@ -186,7 +189,7 @@ body.workout-readonly .workout-timer {
 
 .workout-quick-actions {
     display: grid;
-    grid-template-columns: 30px 1.5fr 1fr 1fr 30px;
+    grid-template-columns: 30px 0.9fr 1.1fr 1.1fr 30px;
     gap: 5px;
     margin-top: 10px;
     padding: 0;
@@ -289,7 +292,7 @@ body.workout-readonly .workout-timer {
 }
 
 .prev-data {
-    font-size: 0.9rem;
+    font-size: 0.75rem;
     color: var(--text-muted);
     text-align: center;
     white-space: nowrap;
