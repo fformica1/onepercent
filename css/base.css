@@ -158,6 +158,10 @@ header h1 {
     margin-left: -5px;
 }
 
+#global-back-btn {
+    margin-top: -3px;
+}
+
 main {
     padding: 80px 20px 80px 20px; /* Spazio inferiore spostato qui per evitare scroll inutile */
     width: 100%;

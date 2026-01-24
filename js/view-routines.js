@@ -115,9 +115,9 @@ function renderExerciseSelector(onConfirm, onCancel, fromHistory = false) {
         </div>
         
         <div class="selector-controls" style="flex-direction: column;">
-            <input type="text" id="search-exercise" placeholder="Cerca..." style="width: 100%;">
+            <input type="text" id="search-exercise" placeholder="Cerca..." style="width: 100%; border-radius: 12px;">
             <div id="muscle-filter-chips" class="filter-chips-container">
-                ${MUSCLE_GROUPS.map(g => `<button class="filter-chip ${currentFilter === g ? 'active' : ''}" data-group="${g}">${g}</button>`).join('')}
+                ${MUSCLE_GROUPS.map(g => `<button class="filter-chip ${currentFilter === g ? 'active' : ''}" data-group="${g}" style="border-radius: 20px;">${g}</button>`).join('')}
             </div>
         </div>
 

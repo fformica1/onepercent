@@ -440,8 +440,8 @@ function renderWorkout(routineId, planId, fromHistory = false) {
     }).join('');
 
     const actionButtonHtml = isReadOnly 
-        ? `<button class="end-workout-btn" style="opacity:0.5; cursor:default;">Vista</button>`
-        : `<button id="btn-workout-action" class="end-workout-btn">Inizia</button>`;
+        ? `<button class="end-workout-btn" style="opacity:0.5; cursor:default; border-radius: 12px;">Vista</button>`
+        : `<button id="btn-workout-action" class="end-workout-btn" style="border-radius: 12px;">Inizia</button>`;
 
     // Cleanup modali precedenti se presenti nel body
     const modalIds = ['end-workout-modal'];
@@ -460,9 +460,9 @@ function renderWorkout(routineId, planId, fromHistory = false) {
             <div class="workout-header-bottom" style="${isReadOnly ? 'display:none;' : ''}">
                 <span id="rest-timer-display" class="rest-timer-large">00:00</span>
                 <div class="rest-timer-controls">
-                    <button id="btn-rest-minus" class="rest-btn">-15</button>
-                    <button id="btn-rest-plus" class="rest-btn">+15</button>
-                    <button id="btn-rest-skip" class="rest-btn skip-btn">Skip</button>
+                    <button id="btn-rest-minus" class="rest-btn" style="border-radius: 12px;">-15</button>
+                    <button id="btn-rest-plus" class="rest-btn" style="border-radius: 12px;">+15</button>
+                    <button id="btn-rest-skip" class="rest-btn skip-btn" style="border-radius: 12px;">Skip</button>
                 </div>
             </div>
         </div>

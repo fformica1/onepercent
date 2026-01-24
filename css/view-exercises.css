@@ -6,7 +6,7 @@
 
 .selector-controls input, .selector-controls select {
     padding: 10px;
-    border-radius: 8px;
+    border-radius: 25px;
     border: 1px solid var(--border);
     background: var(--input-bg);
     color: var(--text-main);
@@ -31,7 +31,7 @@
     border: 1px solid var(--border);
     color: var(--text-muted);
     padding: 8px 16px;
-    border-radius: 20px;
+    border-radius: 16px;
     font-size: 0.9rem;
     white-space: nowrap;
     cursor: pointer;
@@ -55,7 +55,7 @@
 .selector-item {
     background: var(--bg-card);
     padding: 15px;
-    border-radius: 12px;
+    border-radius: 16px;
     display: flex;
     align-items: center;
     justify-content: space-between;

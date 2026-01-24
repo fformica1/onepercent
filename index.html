@@ -146,6 +146,9 @@
                 case 'exerciseSelector':
                     // Il selettore richiede callback che non possono essere salvate nello stato.
                     // Se si arriva qui (es. navigazione avanti), torniamo indietro per sicurezza.
+                    if (AppState.currentView === 'exerciseSelector') {
+                        break;
+                    }
                     history.back();
                     break;
             }

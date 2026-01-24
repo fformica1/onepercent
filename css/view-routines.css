@@ -1,7 +1,7 @@
 .exercise-list {
     list-style: none;
     background: var(--bg-card);
-    border-radius: 12px;
+    border-radius: 16px;
     padding: 10px 20px;
     border: 1px solid var(--border);
 }
@@ -19,7 +19,7 @@
 .workout-card.exercise-editor-card {
     background: var(--bg-card);
     padding: 10px 15px;
-    border-radius: 12px;
+    border-radius: 16px;
     margin-bottom: 10px;
     border: 1px solid var(--border);
     position: relative;
