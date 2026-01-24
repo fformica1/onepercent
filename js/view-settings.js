@@ -28,7 +28,7 @@ function renderSettings(fromHistory = false) {
     const weightIncrement = localStorage.getItem('weight_increment') || '2.5';
     
     const weightIconHtml = `
-        <div id="btn-weight-icon" style="width: 44px; height: 44px; position: relative; cursor: pointer;">
+        <div id="btn-weight-icon" style="width: 30px; height: 30px; position: relative; cursor: pointer;">
             <div class="weight-disk">${weightIncrement}</div>
         </div>
     `;

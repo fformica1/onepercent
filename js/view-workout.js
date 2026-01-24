@@ -366,8 +366,9 @@ function renderWorkout(routineId, planId, fromHistory = false) {
             const hasTargetWeight = (s.weight !== undefined && s.weight !== '');
             const hasTargetReps = (s.reps !== undefined && s.reps !== '');
             
-            const targetWeight = hasTargetWeight ? s.weight : '';
-            const targetReps = hasTargetReps ? s.reps : '';
+            // Se la serie specifica non ha un target, usa il default dell'esercizio (ex.weight/ex.reps)
+            const targetWeight = hasTargetWeight ? s.weight : (ex.weight || '');
+            const targetReps = hasTargetReps ? s.reps : (ex.reps || '');
             
             const prevData = (s.prevWeight) ? `${s.prevWeight}kg x ${s.prevReps}` : "-";
 
@@ -385,7 +386,7 @@ function renderWorkout(routineId, planId, fromHistory = false) {
                 <div class="${rowClass}">
                     <span class="set-number">${i}</span>
                     <span class="prev-data clickable-prev-data" data-exercise-id="${ex.id}">${prevData}</span>
-                    <input type="number" class="workout-input input-weight" placeholder="-" ${valWeight} ${disabledAttr}>
+                    <input type="text" inputmode="decimal" class="workout-input input-weight" placeholder="-" ${valWeight} ${disabledAttr}>
                     <input type="number" class="workout-input input-reps" placeholder="-" ${valReps} ${disabledAttr}>
                     <input type="checkbox" class="workout-checkbox" data-rest="${ex.rest || 90}" ${checkedAttr} ${disabledAttr}>
                 </div>
@@ -546,6 +547,19 @@ function renderWorkout(routineId, planId, fromHistory = false) {
             if (remaining > 0) startRestTimer(remaining);
             else if (!currentWorkoutSession.restFinished) { /* Opzionale: gestire fine timer mentre offline */ }
         }
+
+        // Scroll automatico all'esercizio corrente (primo non completato)
+        setTimeout(() => {
+            const allCards = Array.from(document.querySelectorAll('#active-workout-content .workout-card'));
+            const firstIncomplete = allCards.find(card => {
+                const checkboxes = Array.from(card.querySelectorAll('.workout-checkbox'));
+                return checkboxes.length > 0 && !checkboxes.every(cb => cb.checked);
+            });
+
+            if (firstIncomplete) {
+                scrollToCard(firstIncomplete);
+            }
+        }, 300);
     }
 
     // Helper: Inizializza sessione se modifico qualcosa prima di start
@@ -647,6 +661,11 @@ function renderWorkout(routineId, planId, fromHistory = false) {
     // Input Logic per Peso e Reps (Salva immediatamente mentre scrivi)
     exercisesArea.addEventListener('input', (e) => {
         if (e.target.classList.contains('input-weight') || e.target.classList.contains('input-reps')) {
+            // Force dot for decimals in weight
+            if (e.target.classList.contains('input-weight')) {
+                e.target.value = e.target.value.replace(',', '.');
+            }
+
             const row = e.target.closest('.workout-set-row');
             const card = e.target.closest('.workout-card');
             const setIndex = parseInt(row.querySelector('.set-number').textContent) - 1;
@@ -707,7 +726,7 @@ function renderWorkout(routineId, planId, fromHistory = false) {
             newRow.innerHTML = `
                 <span class="set-number">${currentSets + 1}</span>
                 <span class="prev-data">-</span>
-                <input type="number" class="workout-input input-weight" placeholder="-" ${valWeight}>
+                <input type="text" inputmode="decimal" class="workout-input input-weight" placeholder="-" ${valWeight}>
                 <input type="number" class="workout-input input-reps" placeholder="-" ${valReps}>
                 <input type="checkbox" class="workout-checkbox" data-rest="${card.querySelector('.workout-rest-input').value || 90}">
             `;

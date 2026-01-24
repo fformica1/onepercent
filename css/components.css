@@ -67,7 +67,7 @@
     opacity: 0.9;
 }
 
-.fab.fab-hidden {
+.fab.fab-hidden, .fab.keyboard-hidden {
     transform: scale(0);
     opacity: 0;
     pointer-events: none;

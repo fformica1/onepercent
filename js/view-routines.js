@@ -124,7 +124,7 @@ function renderExerciseSelector(onConfirm, onCancel, fromHistory = false) {
         <div id="selector-list-container" class="selector-list"></div>
 
         <div id="floating-confirm-container" class="floating-confirm-container hidden">
-            <button id="btn-confirm-selection" class="primary-btn">Aggiungi</button>
+            <button id="btn-confirm-selection" class="primary-btn" style="font-weight: normal;">Aggiungi</button>
         </div>
 
         <!-- Modale Crea/Modifica -->
@@ -327,7 +327,7 @@ function renderExerciseEditorHTML(exercise) {
     const rowsHtml = seriesData.map((s, i) => `
         <div class="workout-set-row editor-set-row editor-grid-layout">
             <span class="set-number">${i + 1}</span>
-            <input type="number" class="workout-input set-weight" value="${s.weight}" placeholder="-">
+            <input type="text" inputmode="decimal" class="workout-input set-weight" value="${s.weight}" placeholder="-">
             <input type="number" class="workout-input set-reps" value="${s.reps}" placeholder="-">
         </div>
     `).join('');
@@ -607,7 +607,11 @@ function renderRoutineEditor(routineId, planId, fromHistory = false) {
     });
 
     // Auto-save su input
-    exercisesContainer.addEventListener('input', () => {
+    exercisesContainer.addEventListener('input', (e) => {
+        // Force dot for decimals in weight
+        if (e.target.classList.contains('set-weight')) {
+            e.target.value = e.target.value.replace(',', '.');
+        }
         saveRoutineChanges();
     });
 
@@ -686,7 +690,7 @@ function renderRoutineEditor(routineId, planId, fromHistory = false) {
             newRow.className = 'workout-set-row editor-set-row editor-grid-layout';
             newRow.innerHTML = `
                 <span class="set-number">${currentSets + 1}</span>
-                <input type="number" class="workout-input set-weight" placeholder="-" value="${prevWeight}">
+                <input type="text" inputmode="decimal" class="workout-input set-weight" placeholder="-" value="${prevWeight}">
                 <input type="number" class="workout-input set-reps" placeholder="-" value="${prevReps}">
             `;
             container.appendChild(newRow);

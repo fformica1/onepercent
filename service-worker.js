@@ -1,4 +1,4 @@
-const CACHE_NAME = 'one-percent-v55';
+const CACHE_NAME = 'one-percent-v56';
 const ASSETS_TO_CACHE = [
     './',
     './index.html',
@@ -21,6 +21,9 @@ const ASSETS_TO_CACHE = [
     './js/view-workout.js',
     './w-notification-icon.png',
     './notification-icon.png',
+    './manifest.json',
+    './favicon.png',
+    './app-icon.png',
     './fonts/Poppins-Light.woff2',
     './fonts/Poppins-Regular.woff2',
     './fonts/Poppins-Medium.woff2',
@@ -45,7 +48,7 @@ self.addEventListener('activate', (event) => {
 // Fetch: serve i file dalla cache se offline
 self.addEventListener('fetch', (event) => {
     event.respondWith(
-        caches.match(event.request)
+        caches.match(event.request, {ignoreSearch: true})
             .then((response) => response || fetch(event.request))
     );
 });

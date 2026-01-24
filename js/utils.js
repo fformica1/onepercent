@@ -112,11 +112,50 @@ function openModal(modalId) {
     void modal.offsetWidth; 
     modal.classList.add('open');
     document.body.classList.add('no-scroll');
+
+    // Auto-focus e selezione testo su input per aprire la tastiera
+    const input = modal.querySelector('input[type="text"], input[type="number"], textarea');
+    if (input) {
+        modal.classList.add('keyboard-active');
+        
+        // Gestione dinamica viewport per centrare la modale nello spazio restante (sopra la tastiera)
+        if (window.visualViewport) {
+            const handleResize = () => {
+                if (!modal.classList.contains('open')) return;
+                modal.style.height = `${window.visualViewport.height}px`;
+                modal.style.top = `${window.visualViewport.offsetTop}px`;
+                modal.style.bottom = 'auto'; // Sovrascrive il CSS
+            };
+            // Salviamo il riferimento per rimuoverlo alla chiusura
+            modal._viewportHandler = handleResize;
+            window.visualViewport.addEventListener('resize', handleResize);
+            window.visualViewport.addEventListener('scroll', handleResize);
+            handleResize(); // Applica subito
+        }
+
+        setTimeout(() => {
+            input.focus();
+        }, 100);
+    } else {
+        modal.classList.remove('keyboard-active');
+    }
 }
 
 function closeModal(modalId) {
     const modal = document.getElementById(modalId);
     if (!modal) return;
+    
+    // Rimuovi listener viewport se presenti
+    if (modal._viewportHandler && window.visualViewport) {
+        window.visualViewport.removeEventListener('resize', modal._viewportHandler);
+        window.visualViewport.removeEventListener('scroll', modal._viewportHandler);
+        delete modal._viewportHandler;
+    }
+    // Resetta stili inline
+    modal.style.height = '';
+    modal.style.top = '';
+    modal.style.bottom = '';
+
     modal.classList.remove('open');
     setTimeout(() => {
         modal.classList.add('hidden');

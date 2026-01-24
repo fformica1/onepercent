@@ -100,7 +100,7 @@ function getDefaultPlans(allExercises) {
         findEx("Leg Curl", 3, 10, 90),
         findEx("Alzate Laterali ai Cavi", 3, 10, 90),
         findEx("Curl con Manubri", 3, 10, 90),
-        findEx("Plank", 3, 60, 60)
+        findEx("Push Down", 3, 10, 90)
     ].filter(e => e);
 
     const sessionB = [
@@ -110,7 +110,7 @@ function getDefaultPlans(allExercises) {
         findEx("Leg Extention", 3, 10, 90),
         findEx("Spinte Panca Inclinata", 3, 10, 90),
         findEx("Push Down con Corda", 3, 10, 90),
-        findEx("Crunch", 3, 15, 60)
+        findEx("Curl al Cavo con Corda", 3, 10, 90)
     ].filter(e => e);
 
     const sessionC = [
@@ -120,7 +120,7 @@ function getDefaultPlans(allExercises) {
         findEx("Hip Trust", 3, 10, 90),
         findEx("Shoulder Press", 3, 10, 90),
         findEx("Curl Hammer", 3, 10, 90),
-        findEx("Calf Machine", 3, 15, 60)
+        findEx("Overhead Extention", 3, 10, 90)
     ].filter(e => e);
 
     return [
