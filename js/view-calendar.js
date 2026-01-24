@@ -1,5 +1,6 @@
 function renderCalendar() {
     const container = document.getElementById('view-calendar');
+    container.classList.remove('hidden');
     const now = new Date();
 
     // Nomi mesi e giorni

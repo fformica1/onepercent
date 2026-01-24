@@ -44,12 +44,15 @@ function renderHome(fromHistory = false) {
     } catch (e) { console.error(e); }
 
     if (activePlan && activePlan.routines && activePlan.routines.length > 0) {
-        // Inserisci Maniglia e Titolo
+        // Inserisci Maniglia e Citazione (Area Attiva Calendario)
         listContainer.innerHTML = `
-            <div id="calendar-pull-handle" class="calendar-handle-container">
-                <svg class="calendar-handle-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            <div id="calendar-trigger-area" style="touch-action: none; cursor: pointer; padding-bottom: 10px; -webkit-tap-highlight-color: transparent;">
+                <div class="calendar-handle-container">
+                    <svg class="calendar-handle-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                </div>
+                <p class="quote" style="margin: 0;">Migliora l'1% ogni giorno.</p>
             </div>
-            <h3 class="view-header" style="justify-content: center; margin-top: 0;">${activePlan.name}</h3>
+            <h2 style="text-align: center; margin-bottom: 15px; color: var(--text-main);">${activePlan.name}</h2>
         `;
 
         activePlan.routines.forEach(routine => {
@@ -73,6 +76,7 @@ function renderHome(fromHistory = false) {
 
             if (routine.id === activeSessionRoutineId) {
                 card.classList.add('active-plan');
+                timeLabel = 'IN CORSO';
             }
 
             card.innerHTML = `
@@ -86,7 +90,7 @@ function renderHome(fromHistory = false) {
         });
 
         // --- LOGICA DRAG CALENDARIO ---
-        const handle = document.getElementById('calendar-pull-handle');
+        const handle = document.getElementById('calendar-trigger-area');
         const mainEl = document.querySelector('main');
         let startY = 0;
         let currentY = 0;
@@ -104,6 +108,14 @@ function renderHome(fromHistory = false) {
             const settingsBtn = document.getElementById('btn-settings');
             if(settingsBtn) settingsBtn.classList.add('visible');
             setBackAction(null);
+
+            // Se siamo nello stato calendar (URL #calendar), torniamo indietro nella history
+            if (history.state && history.state.view === 'calendar') {
+                // Ritardo per permettere all'animazione di chiusura di completarsi prima del refresh
+                setTimeout(() => {
+                    if (history.state && history.state.view === 'calendar') history.back();
+                }, 300);
+            }
         };
 
         const openCalendarState = () => {
@@ -115,13 +127,17 @@ function renderHome(fromHistory = false) {
             const settingsBtn = document.getElementById('btn-settings');
             if(settingsBtn) settingsBtn.classList.remove('visible');
             setBackAction(closeCalendarState);
+
+            // Aggiungi stato alla history per intercettare il tasto indietro
+            if (!history.state || history.state.view !== 'calendar') {
+                history.pushState({view: 'calendar'}, 'Calendario', '#calendar');
+            }
         };
 
         // Inizializza calendario (nascosto sotto)
         renderCalendar();
 
         handle.addEventListener('touchstart', (e) => {
-            if (!e.target.closest('.calendar-handle-icon')) return;
             startY = e.touches[0].clientY;
             // Se il calendario è già aperto (main spostato), startY deve considerare l'offset
             const currentTransform = new WebKitCSSMatrix(window.getComputedStyle(mainEl).transform).m42;
@@ -174,7 +190,6 @@ function renderHome(fromHistory = false) {
 
         // Gestione Click (Toggle)
         handle.addEventListener('click', (e) => {
-            if (!e.target.closest('.calendar-handle-icon')) return;
             if (wasDragged) return; // Se è stato trascinato, ignora il click
 
             const isClosed = !mainEl.classList.contains('calendar-open');
@@ -196,6 +211,7 @@ function renderHome(fromHistory = false) {
 
     } else {
         listContainer.innerHTML = `
+            <p class="quote">Migliora l'1% ogni giorno.</p>
             <p class="empty-state">Nessun piano attivo selezionato.</p>
             <p class="empty-state-secondary">Vai nella sezione Piani per selezionarne uno.</p>
         `;

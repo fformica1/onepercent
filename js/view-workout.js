@@ -4,7 +4,6 @@ let currentRestSeconds = 0;
 let currentWorkoutSession = null;
 let workoutAudioCtx = null;
 let wakeLock = null;
-let dimmingTimer = null;
 let restEndTime = 0;
 let _cardToScrollToAfterRest = null;
 try {
@@ -245,12 +244,10 @@ function renderExerciseHistoryModal(exerciseId, routine) {
         historyContent.innerHTML = historyHtml;
     }
 
-    modal.classList.remove('hidden');
-    document.body.classList.add('no-scroll');
+    openModal('exercise-history-modal');
 
     document.getElementById('btn-close-exercise-history-modal').onclick = () => {
-        modal.classList.add('hidden');
-        document.body.classList.remove('no-scroll');
+        closeModal('exercise-history-modal');
     };
 }
 
@@ -272,48 +269,12 @@ function deactivateWakeLock() {
     }
 }
 
-function disableDimming() {
-    document.removeEventListener('click', resetDimmingTimer);
-    document.removeEventListener('touchstart', resetDimmingTimer);
-    document.removeEventListener('scroll', resetDimmingTimer);
-    if (dimmingTimer) clearTimeout(dimmingTimer);
-    document.body.classList.remove('dimmed-mode');
-}
-
-function resetDimmingTimer() {
-    // Safety check: se non siamo più nella vista workout, pulisci tutto
-    const workoutView = document.getElementById('view-workout');
-    if (!workoutView || workoutView.classList.contains('hidden')) {
-        disableDimming();
-        deactivateWakeLock();
-        return;
-    }
-
-    document.body.classList.remove('dimmed-mode');
-    if (dimmingTimer) clearTimeout(dimmingTimer);
-    
-    dimmingTimer = setTimeout(() => {
-        const currentView = document.getElementById('view-workout');
-        if (currentView && !currentView.classList.contains('hidden')) {
-            document.body.classList.add('dimmed-mode');
-        }
-    }, 10000); // 10 secondi
-}
-
-function enableDimming() {
-    document.addEventListener('click', resetDimmingTimer);
-    document.addEventListener('touchstart', resetDimmingTimer);
-    document.addEventListener('scroll', resetDimmingTimer);
-    resetDimmingTimer();
-}
-
 // Re-acquisisci Wake Lock se l'app torna visibile
 document.addEventListener('visibilitychange', async () => {
     if (document.visibilityState === 'visible' && document.getElementById('view-workout') && !document.getElementById('view-workout').classList.contains('hidden')) {
         const actionBtn = document.getElementById('btn-workout-action');
         if (actionBtn && actionBtn.textContent === "Fine") {
             await activateWakeLock();
-            resetDimmingTimer();
         }
     }
 });
@@ -506,7 +467,7 @@ function renderWorkout(routineId, planId, fromHistory = false) {
                 <p style="margin-bottom: 20px;">Vuoi salvare l'allenamento o uscire senza salvare?</p>
                 <div class="modal-actions" style="flex-direction: column; gap: 10px;">
                     <button id="btn-save-workout" class="primary-btn">Salva e Termina</button>
-                    <button id="btn-discard-workout" class="secondary-btn" style="color: var(--text-muted);">Esci senza salvare</button>
+                    <button id="btn-discard-workout" class="secondary-btn">Esci senza salvare</button>
                     <button id="btn-cancel-modal" class="secondary-btn">Annulla</button>
                 </div>
             </div>
@@ -577,7 +538,6 @@ function renderWorkout(routineId, planId, fromHistory = false) {
         startWorkoutTimerUI(currentWorkoutSession.startTime);
         updateRestDisplay();
         activateWakeLock();
-        enableDimming();
         
         // Ripristina timer recupero se attivo
         if (currentWorkoutSession.restEndTime) {
@@ -616,7 +576,6 @@ function renderWorkout(routineId, planId, fromHistory = false) {
 
         startWorkoutTimerUI(currentWorkoutSession.startTime);
         activateWakeLock();
-        enableDimming();
     };
 
     // Smart Input Logic
@@ -906,7 +865,6 @@ function renderWorkout(routineId, planId, fromHistory = false) {
 
     // Tasto Indietro: Esce senza chiedere conferma, mantiene stato attivo
     document.getElementById('btn-back-workout').onclick = () => {
-        disableDimming();
         deactivateWakeLock();
 
         // FIX: Se l'allenamento NON è iniziato (è solo una bozza), annulla le modifiche ed esci
@@ -937,24 +895,20 @@ function renderWorkout(routineId, planId, fromHistory = false) {
                 startSession();
             } else {
                 // Apre modale conferma
-                document.getElementById('end-workout-modal').classList.remove('hidden');
-                document.body.classList.add('no-scroll');
+                openModal('end-workout-modal');
             }
         }
     };
 
     // Gestione Modale Fine Allenamento
     document.getElementById('btn-cancel-modal').onclick = () => {
-        document.getElementById('end-workout-modal').classList.add('hidden');
-        document.body.classList.remove('no-scroll');
+        closeModal('end-workout-modal');
     };
 
     document.getElementById('btn-save-workout').onclick = () => {
-        disableDimming();
         deactivateWakeLock();
-        document.body.classList.remove('no-scroll');
         // Chiudi la modale
-        document.getElementById('end-workout-modal').classList.add('hidden');
+        closeModal('end-workout-modal');
 
         const workoutDuration = currentWorkoutSession && currentWorkoutSession.startTime ? Math.floor((Date.now() - currentWorkoutSession.startTime) / 1000) : 0; // in seconds
         const workoutDate = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
@@ -1015,11 +969,9 @@ function renderWorkout(routineId, planId, fromHistory = false) {
     };
 
     document.getElementById('btn-discard-workout').onclick = () => {
-        disableDimming();
         deactivateWakeLock();
-        document.body.classList.remove('no-scroll');
         // Chiudi la modale
-        document.getElementById('end-workout-modal').classList.add('hidden');
+        closeModal('end-workout-modal');
 
         // Ripristina lo stato precedente (annulla modifiche sessione)
         if (currentWorkoutSession && currentWorkoutSession.originalRoutineJSON) {

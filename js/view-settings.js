@@ -26,7 +26,12 @@ function renderSettings(fromHistory = false) {
     const bellOffIcon = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13.73 21a2 2 0 0 1-3.46 0"></path><path d="M18.63 13A17.89 17.89 0 0 1 18 8"></path><path d="M6.26 6.26A5.86 5.86 0 0 0 6 8c0 7-3 9-3 9h14"></path><path d="M18 8a6 6 0 0 0-9.33-5"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>';
 
     const weightIncrement = localStorage.getItem('weight_increment') || '2.5';
-    const slidersIcon = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"></line><line x1="4" y1="10" x2="4" y2="3"></line><line x1="12" y1="21" x2="12" y2="12"></line><line x1="12" y1="8" x2="12" y2="3"></line><line x1="20" y1="21" x2="20" y2="16"></line><line x1="20" y1="12" x2="20" y2="3"></line><line x1="1" y1="14" x2="7" y2="14"></line><line x1="9" y1="8" x2="15" y2="8"></line><line x1="17" y1="16" x2="23" y2="16"></line></svg>';
+    
+    const weightIconHtml = `
+        <div id="btn-weight-icon" style="width: 44px; height: 44px; position: relative; cursor: pointer;">
+            <div class="weight-disk">${weightIncrement}</div>
+        </div>
+    `;
 
     container.innerHTML = `
         <div class="view-header" style="justify-content: center;">
@@ -39,7 +44,7 @@ function renderSettings(fromHistory = false) {
                     <small id="theme-status">${themeLabel}</small>
                 </div>
                 <div style="display:flex; align-items:center;">
-                     <button class="action-btn">${themeIcon}</button>
+                     <button id="btn-theme-icon" class="action-btn">${themeIcon}</button>
                 </div>
             </div>
             <div class="routine-card" id="setting-notif-card">
@@ -48,7 +53,7 @@ function renderSettings(fromHistory = false) {
                     <small id="notif-status">${notifEnabled ? 'Abilitate' : 'Disabilitate'}</small>
                 </div>
                 <div style="display:flex; align-items:center;">
-                     <button class="action-btn">${notifEnabled ? bellIcon : bellOffIcon}</button>
+                     <button id="btn-notif-icon" class="action-btn">${notifEnabled ? bellIcon : bellOffIcon}</button>
                 </div>
             </div>
             <div class="routine-card" id="setting-weight-card">
@@ -57,7 +62,7 @@ function renderSettings(fromHistory = false) {
                     <small id="weight-status">${weightIncrement} kg</small>
                 </div>
                 <div style="display:flex; align-items:center;">
-                     <button class="action-btn">${slidersIcon}</button>
+                     ${weightIconHtml}
                 </div>
             </div>
         </div>
@@ -67,20 +72,54 @@ function renderSettings(fromHistory = false) {
     `;
 
     document.getElementById('setting-theme-card').addEventListener('click', () => {
-        toggleTheme();
-        renderSettings(true); // Ricarica senza aggiungere alla history
+        const btn = document.getElementById('btn-theme-icon');
+        if (btn.classList.contains('icon-animating')) return;
+        btn.classList.add('icon-animating');
+
+        setTimeout(() => {
+            toggleTheme();
+            // Aggiorna UI locale
+            let newLabel = 'Chiaro';
+            let newIcon = sunIcon;
+            if (AppState.theme === 'dark') { newLabel = 'Scuro'; newIcon = moonIcon; }
+            else if (AppState.theme === 'gray') { newLabel = 'Grigio'; newIcon = cloudIcon; }
+            
+            document.getElementById('theme-status').textContent = newLabel;
+            btn.innerHTML = newIcon;
+            btn.classList.remove('icon-animating');
+        }, 150);
     });
 
     document.getElementById('setting-notif-card').addEventListener('click', () => {
-        const newState = !notifEnabled;
-        localStorage.setItem('notifications_enabled', newState);
-        renderSettings(true); // Ricarica senza aggiungere alla history
+        const btn = document.getElementById('btn-notif-icon');
+        if (btn.classList.contains('icon-animating')) return;
+        btn.classList.add('icon-animating');
+
+        setTimeout(() => {
+            const current = localStorage.getItem('notifications_enabled') !== 'false';
+            const newState = !current;
+            localStorage.setItem('notifications_enabled', newState);
+            
+            document.getElementById('notif-status').textContent = newState ? 'Abilitate' : 'Disabilitate';
+            btn.innerHTML = newState ? bellIcon : bellOffIcon;
+            btn.classList.remove('icon-animating');
+        }, 150);
     });
 
     document.getElementById('setting-weight-card').addEventListener('click', () => {
-        const newVal = weightIncrement === '2.5' ? '2' : '2.5';
-        localStorage.setItem('weight_increment', newVal);
-        renderSettings(true); // Ricarica per aggiornare la UI
+        const btn = document.getElementById('btn-weight-icon');
+        if (btn.classList.contains('icon-animating')) return;
+        btn.classList.add('icon-animating');
+
+        setTimeout(() => {
+            const currentVal = localStorage.getItem('weight_increment') || '2.5';
+            const newVal = currentVal === '2.5' ? '2' : '2.5';
+            localStorage.setItem('weight_increment', newVal);
+            
+            document.getElementById('weight-status').textContent = `${newVal} kg`;
+            btn.querySelector('.weight-disk').textContent = newVal;
+            btn.classList.remove('icon-animating');
+        }, 150);
     });
 
     setBackAction(() => history.back());

@@ -18,16 +18,14 @@ function showConfirmationModal(title, message, onConfirm) {
     confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
     newConfirmBtn.addEventListener('click', () => {
         onConfirm();
-        modal.classList.add('hidden');
-        document.body.classList.remove('no-scroll');
+        closeModal('confirm-modal');
     });
 
     const newCancelBtn = cancelBtn.cloneNode(true);
     cancelBtn.parentNode.replaceChild(newCancelBtn, cancelBtn);
-    newCancelBtn.addEventListener('click', () => { modal.classList.add('hidden'); document.body.classList.remove('no-scroll'); });
+    newCancelBtn.addEventListener('click', () => { closeModal('confirm-modal'); });
     
-    modal.classList.remove('hidden');
-    document.body.classList.add('no-scroll');
+    openModal('confirm-modal');
 }
 
 // --- RENDER SELETTORE ESERCIZI ---
@@ -160,10 +158,19 @@ function renderExerciseSelector(onConfirm, onCancel, fromHistory = false) {
     // --- EVENT LISTENERS ---
 
     // Filtri
-    document.getElementById('search-exercise').addEventListener('input', (e) => {
+    const searchInput = document.getElementById('search-exercise');
+    searchInput.addEventListener('input', (e) => {
         currentSearch = e.target.value;
         renderList();
     });
+    searchInput.addEventListener('focus', (e) => {
+        if (e.target.value) {
+            e.target.value = '';
+            currentSearch = '';
+            renderList();
+        }
+    });
+
     document.getElementById('muscle-filter-chips').addEventListener('click', (e) => {
         if (e.target.classList.contains('filter-chip')) {
             currentFilter = e.target.dataset.group;
@@ -231,11 +238,9 @@ function renderExerciseSelector(onConfirm, onCancel, fromHistory = false) {
     });
 
     // --- MODALE ---
-    const modal = document.getElementById('exercise-modal');
     
     function openModal(exercise = null) {
-        modal.classList.remove('hidden');
-        document.body.classList.add('no-scroll');
+        window.openModal('exercise-modal'); // Usa la funzione globale
         if (exercise) {
             document.getElementById('modal-title').textContent = "Modifica Esercizio";
             document.getElementById('modal-ex-id').value = exercise.id;
@@ -250,8 +255,7 @@ function renderExerciseSelector(onConfirm, onCancel, fromHistory = false) {
     }
 
     document.getElementById('modal-cancel').addEventListener('click', () => { 
-        modal.classList.add('hidden'); 
-        document.body.classList.remove('no-scroll'); 
+        closeModal('exercise-modal');
     });
     
     document.getElementById('modal-save').addEventListener('click', () => {
@@ -262,14 +266,40 @@ function renderExerciseSelector(onConfirm, onCancel, fromHistory = false) {
         if (!name) return;
 
         if (id) { // Modifica
-            const ex = AppState.exercises.find(e => e.id == id);
-            if (ex) { ex.name = name; ex.muscleGroup = group; }
+            const numericId = parseFloat(id);
+            const ex = AppState.exercises.find(e => e.id === numericId);
+            if (ex) { 
+                const oldName = ex.name;
+                ex.name = name; 
+                ex.muscleGroup = group; 
+
+                // 1. Aggiorna la selezione corrente se l'esercizio era selezionato (Fix bug conteggio)
+                const selIndex = selectedExercises.indexOf(oldName);
+                if (selIndex !== -1) {
+                    selectedExercises[selIndex] = name;
+                }
+
+                // 2. Propaga la modifica a tutte le routine esistenti (Preserva storico e coerenza)
+                AppState.plans.forEach(plan => {
+                    if (plan.routines) {
+                        plan.routines.forEach(routine => {
+                            if (routine.exercises) {
+                                routine.exercises.forEach(routineEx => {
+                                    if (routineEx.name === oldName) {
+                                        routineEx.name = name;
+                                        routineEx.muscleGroup = group;
+                                    }
+                                });
+                            }
+                        });
+                    }
+                });
+            }
         } else { // Crea
             AppState.exercises.push({ id: Date.now(), name: name, muscleGroup: group });
         }
         saveAppData();
-        modal.classList.add('hidden');
-        document.body.classList.remove('no-scroll');
+        closeModal('exercise-modal');
         renderList();
     });
 

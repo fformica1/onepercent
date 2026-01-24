@@ -1,13 +1,6 @@
 // Registrazione Service Worker per PWA
 if ('serviceWorker' in navigator) {
-    // Rimuovi eventuali Service Worker precedenti per forzare l'aggiornamento
-    navigator.serviceWorker.getRegistrations().then(function(registrations) {
-        for(let registration of registrations) {
-            registration.unregister();
-        }
-    });
-
-    // Registra il nuovo
+    // Registra il Service Worker (Gestisce cache e offline)
     navigator.serviceWorker.register('./service-worker.js')
         .then(reg => console.log('Service Worker registrato:', reg.scope))
         .catch(err => console.error('Errore Service Worker:', err));

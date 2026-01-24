@@ -1,4 +1,4 @@
-const CACHE_NAME = 'one-percent-v54';
+const CACHE_NAME = 'one-percent-v55';
 const ASSETS_TO_CACHE = [
     './',
     './index.html',
@@ -20,7 +20,12 @@ const ASSETS_TO_CACHE = [
     './js/view-routines.js',
     './js/view-workout.js',
     './w-notification-icon.png',
-    './notification-icon.png'
+    './notification-icon.png',
+    './fonts/Poppins-Light.woff2',
+    './fonts/Poppins-Regular.woff2',
+    './fonts/Poppins-Medium.woff2',
+    './fonts/Poppins-SemiBold.woff2',
+    './fonts/Poppins-Bold.woff2'
 ];
 
 // Installazione: cache delle risorse statiche

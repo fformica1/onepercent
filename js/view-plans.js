@@ -18,16 +18,14 @@ function showConfirmationModal(title, message, onConfirm) {
     confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
     newConfirmBtn.addEventListener('click', () => {
         onConfirm();
-        modal.classList.add('hidden');
-        document.body.classList.remove('no-scroll');
+        closeModal('confirm-modal');
     });
 
     const newCancelBtn = cancelBtn.cloneNode(true);
     cancelBtn.parentNode.replaceChild(newCancelBtn, cancelBtn);
-    newCancelBtn.addEventListener('click', () => { modal.classList.add('hidden'); document.body.classList.remove('no-scroll'); });
+    newCancelBtn.addEventListener('click', () => { closeModal('confirm-modal'); });
     
-    modal.classList.remove('hidden');
-    document.body.classList.add('no-scroll');
+    openModal('confirm-modal');
 }
 
 // --- MODALE AVVISO GLOBALE ---
@@ -49,10 +47,9 @@ function showAlertModal(title, message) {
     
     newConfirmBtn.textContent = "OK";
     newConfirmBtn.classList.remove('danger-btn');
-    newConfirmBtn.addEventListener('click', () => { modal.classList.add('hidden'); document.body.classList.remove('no-scroll'); });
+    newConfirmBtn.addEventListener('click', () => { closeModal('confirm-modal'); });
     
-    modal.classList.remove('hidden');
-    document.body.classList.add('no-scroll');
+    openModal('confirm-modal');
 }
 
 // --- RENDER DETTAGLIO PIANO ---
@@ -148,8 +145,7 @@ function renderPlanDetail(plan, fromHistory = false) {
                 e.stopPropagation();
                 document.getElementById('edit-routine-id-plan').value = routine.id;
                 document.getElementById('edit-routine-name-plan').value = routine.name;
-                document.getElementById('edit-routine-modal-plan').classList.remove('hidden');
-                document.body.classList.add('no-scroll');
+                openModal('edit-routine-modal-plan');
             });
 
             card.querySelector('.delete-routine-btn').addEventListener('click', (e) => {
@@ -273,10 +269,8 @@ function renderPlanDetail(plan, fromHistory = false) {
     dragListContainer.addEventListener('mousedown', handleDragStart);
 
     // Modal Events
-    const modal = document.getElementById('edit-routine-modal-plan');
     document.getElementById('btn-cancel-edit-routine-plan').onclick = () => { 
-        modal.classList.add('hidden'); 
-        document.body.classList.remove('no-scroll'); 
+        closeModal('edit-routine-modal-plan');
     };
     
     document.getElementById('btn-save-edit-routine-plan').onclick = () => {
@@ -287,8 +281,7 @@ function renderPlanDetail(plan, fromHistory = false) {
         if (routine && name) {
             routine.name = name;
             saveAppData();
-            modal.classList.add('hidden');
-            document.body.classList.remove('no-scroll');
+            closeModal('edit-routine-modal-plan');
             renderPlanDetail(plan);
         }
     };
@@ -298,14 +291,12 @@ function renderPlanDetail(plan, fromHistory = false) {
     // FAB: Apre modale creazione routine
     setFabAction(() => {
         document.getElementById('create-routine-name').value = '';
-        document.getElementById('create-routine-modal').classList.remove('hidden');
-        document.body.classList.add('no-scroll');
+        openModal('create-routine-modal');
     });
 
     // Gestione Modale Creazione Routine
     document.getElementById('btn-cancel-create-routine').onclick = () => {
-        document.getElementById('create-routine-modal').classList.add('hidden');
-        document.body.classList.remove('no-scroll');
+        closeModal('create-routine-modal');
     };
 
     document.getElementById('btn-save-create-routine').onclick = () => {
@@ -315,8 +306,7 @@ function renderPlanDetail(plan, fromHistory = false) {
             if (!plan.routines) plan.routines = [];
             plan.routines.push(newRoutine);
             saveAppData();
-            document.getElementById('create-routine-modal').classList.add('hidden');
-            document.body.classList.remove('no-scroll');
+            closeModal('create-routine-modal');
             renderPlanDetail(plan);
         }
     };
@@ -479,8 +469,7 @@ function renderPlans(fromHistory = false) {
             if (plan) {
                 document.getElementById('edit-plan-id').value = plan.id;
                 document.getElementById('edit-plan-name').value = plan.name;
-                document.getElementById('edit-plan-modal').classList.remove('hidden');
-                document.body.classList.add('no-scroll');
+                openModal('edit-plan-modal');
             }
             return;
         }
@@ -503,10 +492,8 @@ function renderPlans(fromHistory = false) {
     };
 
     // Modal Events
-    const modal = document.getElementById('edit-plan-modal');
     document.getElementById('btn-cancel-edit-plan').onclick = () => { 
-        modal.classList.add('hidden'); 
-        document.body.classList.remove('no-scroll'); 
+        closeModal('edit-plan-modal');
     };
     
     document.getElementById('btn-save-edit-plan').onclick = () => {
@@ -517,8 +504,7 @@ function renderPlans(fromHistory = false) {
         if (plan && name) {
             plan.name = name;
             saveAppData();
-            modal.classList.add('hidden');
-            document.body.classList.remove('no-scroll');
+            closeModal('edit-plan-modal');
             renderPlans();
         }
     };
@@ -528,14 +514,12 @@ function renderPlans(fromHistory = false) {
     // FAB: Apre modale creazione piano
     setFabAction(() => {
         document.getElementById('create-plan-name').value = '';
-        document.getElementById('create-plan-modal').classList.remove('hidden');
-        document.body.classList.add('no-scroll');
+        openModal('create-plan-modal');
     });
 
     // Gestione Modale Creazione Piano
     document.getElementById('btn-cancel-create-plan').onclick = () => {
-        document.getElementById('create-plan-modal').classList.add('hidden');
-        document.body.classList.remove('no-scroll');
+        closeModal('create-plan-modal');
     };
 
     document.getElementById('btn-save-create-plan').onclick = () => {
@@ -544,8 +528,7 @@ function renderPlans(fromHistory = false) {
             const newPlan = { id: Date.now(), name: name, description: '', routines: [] };
             AppState.plans.push(newPlan);
             saveAppData();
-            document.getElementById('create-plan-modal').classList.add('hidden');
-            document.body.classList.remove('no-scroll');
+            closeModal('create-plan-modal');
             renderPlans();
         }
     };

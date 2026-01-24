@@ -37,9 +37,20 @@ function applyTheme() {
     
     // Aggiorna icona bottone in base al PROSSIMO tema
     if (btn) {
-        if (AppState.theme === 'light') btn.textContent = '🌙'; // Prossimo: Dark
-        else if (AppState.theme === 'dark') btn.textContent = '☁️'; // Prossimo: Gray
-        else if (AppState.theme === 'gray') btn.textContent = '☀️'; // Prossimo: Light
+        let nextIcon = '';
+        if (AppState.theme === 'light') nextIcon = '🌙'; // Prossimo: Dark
+        else if (AppState.theme === 'dark') nextIcon = '☁️'; // Prossimo: Gray
+        else if (AppState.theme === 'gray') nextIcon = '☀️'; // Prossimo: Light
+
+        if (btn.textContent && btn.textContent !== nextIcon) {
+            btn.classList.add('icon-animating');
+            setTimeout(() => {
+                btn.textContent = nextIcon;
+                btn.classList.remove('icon-animating');
+            }, 150);
+        } else {
+            btn.textContent = nextIcon;
+        }
     }
     
     // Aggiorna meta tag colore browser
@@ -90,4 +101,25 @@ function setFabAction(action, iconHtml) {
         fab.innerHTML = iconHtml || '<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 0 24 24" width="24px" fill="currentColor"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>';
         fab.onclick = action;
     }
+}
+
+// --- GESTIONE MODALI (Animazioni) ---
+function openModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (!modal) return;
+    modal.classList.remove('hidden');
+    // Force reflow per attivare la transizione CSS
+    void modal.offsetWidth; 
+    modal.classList.add('open');
+    document.body.classList.add('no-scroll');
+}
+
+function closeModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (!modal) return;
+    modal.classList.remove('open');
+    setTimeout(() => {
+        modal.classList.add('hidden');
+        document.body.classList.remove('no-scroll');
+    }, 300); // Deve corrispondere alla durata della transizione CSS
 }
