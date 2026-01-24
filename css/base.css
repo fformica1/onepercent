@@ -357,7 +357,7 @@ body.no-scroll {
 }
 
 /* Icon Transitions */
-#theme-toggle, #notification-toggle, #btn-theme-icon, #btn-notif-icon, #btn-weight-icon {
+#theme-toggle, #notification-toggle, #btn-theme-icon, #btn-notif-icon, #btn-weight-icon, #btn-backup-export, #btn-backup-import {
     transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), opacity 0.3s ease;
     display: inline-block;
 }
@@ -370,4 +370,8 @@ body.no-scroll {
 /* Override per bottoni header posizionati assolutamente */
 .header-icon-btn.icon-animating {
     transform: translate(-50%, -50%) scale(0.5) rotate(90deg);
+}
+
+.click-animating {
+    transform: scale(0.8);
 }

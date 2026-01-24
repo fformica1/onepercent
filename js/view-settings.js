@@ -11,6 +11,9 @@ function renderSettings(fromHistory = false) {
     const sunIcon = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>';
     const cloudIcon = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"></path></svg>';
 
+    const downloadIcon = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>';
+    const uploadIcon = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>';
+
     let themeLabel = 'Chiaro';
     let themeIcon = sunIcon;
     if (AppState.theme === 'dark') {
@@ -65,9 +68,20 @@ function renderSettings(fromHistory = false) {
                      ${weightIconHtml}
                 </div>
             </div>
+            <div class="routine-card" style="cursor: default;">
+                <div>
+                    <h3>Backup</h3>
+                    <small>Importa o esporta i dati</small>
+                </div>
+                <div style="display:flex; align-items:center; gap: 15px;">
+                     <button id="btn-backup-import" class="action-btn">${downloadIcon}</button>
+                     <button id="btn-backup-export" class="action-btn">${uploadIcon}</button>
+                </div>
+            </div>
         </div>
+        <input type="file" id="import-file-input" accept=".json" style="display: none;">
         <div style="text-align: center; margin-top: 20px; color: var(--text-muted); font-size: 0.8rem; padding-bottom: 20px;">
-            OnePercent v1.0
+            OnePercent v1.8
         </div>
     `;
 
@@ -120,6 +134,105 @@ function renderSettings(fromHistory = false) {
             btn.querySelector('.weight-disk').textContent = newVal;
             btn.classList.remove('icon-animating');
         }, 150);
+    });
+
+    // Export Logic
+    document.getElementById('btn-backup-export').addEventListener('click', (e) => {
+        e.stopPropagation();
+        const btn = e.currentTarget;
+        btn.classList.add('click-animating');
+
+        setTimeout(() => {
+            const backup = {
+                plans: AppState.plans,
+                exercises: AppState.exercises,
+                timestamp: Date.now(),
+                version: 1
+            };
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backup, null, 2));
+            const downloadAnchorNode = document.createElement('a');
+            downloadAnchorNode.setAttribute("href", dataStr);
+            downloadAnchorNode.setAttribute("download", "onepercent_backup_" + new Date().toISOString().split('T')[0] + ".json");
+            document.body.appendChild(downloadAnchorNode);
+            downloadAnchorNode.click();
+            downloadAnchorNode.remove();
+            btn.classList.remove('click-animating');
+        }, 200);
+    });
+
+    // Import Logic
+    const fileInput = document.getElementById('import-file-input');
+    document.getElementById('btn-backup-import').addEventListener('click', (e) => {
+        e.stopPropagation();
+        const btn = e.currentTarget;
+        btn.classList.add('click-animating');
+        fileInput.click();
+        setTimeout(() => {
+            btn.classList.remove('click-animating');
+        }, 200);
+    });
+
+    fileInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            try {
+                const importedData = JSON.parse(event.target.result);
+                if (!importedData.plans || !importedData.exercises) {
+                    alert("Formato file non valido.");
+                    return;
+                }
+
+                if (!confirm("Vuoi importare questo backup? I piani verranno aggiunti e gli esercizi mancanti inseriti.")) {
+                    fileInput.value = '';
+                    return;
+                }
+
+                // 1. Import Exercises (Ignore duplicates by name)
+                let addedExercisesCount = 0;
+                importedData.exercises.forEach(impEx => {
+                    const exists = AppState.exercises.some(localEx => 
+                        localEx.name.trim().toLowerCase() === impEx.name.trim().toLowerCase()
+                    );
+                    if (!exists) {
+                        if (AppState.exercises.some(e => e.id === impEx.id)) {
+                            impEx.id = Date.now() + Math.floor(Math.random() * 100000);
+                        }
+                        AppState.exercises.push(impEx);
+                        addedExercisesCount++;
+                    }
+                });
+                
+                AppState.exercises.sort((a, b) => {
+                    if (a.muscleGroup < b.muscleGroup) return -1;
+                    if (a.muscleGroup > b.muscleGroup) return 1;
+                    return a.name.localeCompare(b.name);
+                });
+
+                // 2. Import Plans (Append as new)
+                importedData.plans.forEach(impPlan => {
+                    impPlan.id = Date.now() + Math.floor(Math.random() * 100000);
+                    if (impPlan.routines) {
+                        impPlan.routines.forEach(routine => {
+                            routine.id = Date.now() + Math.floor(Math.random() * 100000);
+                        });
+                    }
+                    AppState.plans.push(impPlan);
+                });
+
+                saveAppData();
+                alert(`Backup importato!\nEsercizi aggiunti: ${addedExercisesCount}\nPiani aggiunti: ${importedData.plans.length}`);
+                renderSettings(); 
+
+            } catch (err) {
+                console.error(err);
+                alert("Errore durante la lettura del file.");
+            }
+            fileInput.value = '';
+        };
+        reader.readAsText(file);
     });
 
     setBackAction(() => history.back());
