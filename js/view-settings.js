@@ -25,8 +25,11 @@ function renderSettings(fromHistory = false) {
     }
     
     const notifEnabled = localStorage.getItem('notifications_enabled') !== 'false';
-    const bellIcon = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>';
-    const bellOffIcon = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13.73 21a2 2 0 0 1-3.46 0"></path><path d="M18.63 13A17.89 17.89 0 0 1 18 8"></path><path d="M6.26 6.26A5.86 5.86 0 0 0 6 8c0 7-3 9-3 9h14"></path><path d="M18 8a6 6 0 0 0-9.33-5"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>';
+    const bellIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+        <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+        <line x1="3" y1="3" x2="21" y2="21" class="notif-slash ${!notifEnabled ? 'visible' : ''}"></line>
+    </svg>`;
 
     const weightIncrement = localStorage.getItem('weight_increment') || '2.5';
     
@@ -56,7 +59,7 @@ function renderSettings(fromHistory = false) {
                     <small id="notif-status">${notifEnabled ? 'Abilitate' : 'Disabilitate'}</small>
                 </div>
                 <div style="display:flex; align-items:center;">
-                     <button id="btn-notif-icon" class="action-btn">${notifEnabled ? bellIcon : bellOffIcon}</button>
+                     <button id="btn-notif-icon" class="action-btn">${bellIcon}</button>
                 </div>
             </div>
             <div class="routine-card" id="setting-weight-card">
@@ -81,7 +84,7 @@ function renderSettings(fromHistory = false) {
         </div>
         <input type="file" id="import-file-input" accept=".json" style="display: none;">
         <div style="text-align: center; margin-top: 20px; color: var(--text-muted); font-size: 0.8rem; padding-bottom: 20px;">
-            OnePercent v1.8
+            OnePercent v1.9
         </div>
     `;
 
@@ -104,26 +107,50 @@ function renderSettings(fromHistory = false) {
         }, 150);
     });
 
-    document.getElementById('setting-notif-card').addEventListener('click', () => {
-        const btn = document.getElementById('btn-notif-icon');
-        if (btn.classList.contains('icon-animating')) return;
-        btn.classList.add('icon-animating');
+    document.getElementById('setting-notif-card').addEventListener('click', async () => {
+        const notifCard = document.getElementById('setting-notif-card');
+        if (notifCard.dataset.processing) return; // Evita doppi click
+        notifCard.dataset.processing = 'true';
 
-        setTimeout(() => {
-            const current = localStorage.getItem('notifications_enabled') !== 'false';
-            const newState = !current;
-            localStorage.setItem('notifications_enabled', newState);
+        try {
+            const currentIsEnabled = localStorage.getItem('notifications_enabled') !== 'false';
+            let newIsEnabled = !currentIsEnabled;
+
+            // Se si sta tentando di ABILITARE, chiedi il permesso prima
+            if (newIsEnabled) {
+                if (typeof SystemNotifier !== 'undefined') {
+                    const permissionGranted = await SystemNotifier.requestPermission();
+                    if (!permissionGranted) {
+                        showAlertModal("Permesso Negato", "Permesso per le notifiche negato. Non sarà possibile mostrare avvisi durante l'allenamento.");
+                        newIsEnabled = false; // Forza lo stato a rimanere disabilitato
+                    }
+                } else {
+                    console.error("SystemNotifier non caricato.");
+                }
+            }
+
+            localStorage.setItem('notifications_enabled', String(newIsEnabled));
             
-            document.getElementById('notif-status').textContent = newState ? 'Abilitate' : 'Disabilitate';
-            btn.innerHTML = newState ? bellIcon : bellOffIcon;
-            btn.classList.remove('icon-animating');
-        }, 150);
+            document.getElementById('notif-status').textContent = newIsEnabled ? 'Abilitate' : 'Disabilitate';
+            const slash = document.querySelector('#btn-notif-icon .notif-slash');
+            if (slash) {
+                slash.classList.toggle('visible', !newIsEnabled);
+            }
+        } catch (e) {
+            console.error("Errore toggle notifiche:", e);
+        } finally {
+            delete notifCard.dataset.processing;
+        }
     });
 
     document.getElementById('setting-weight-card').addEventListener('click', () => {
         const btn = document.getElementById('btn-weight-icon');
-        if (btn.classList.contains('icon-animating')) return;
-        btn.classList.add('icon-animating');
+        if (btn.dataset.animating === 'true') return;
+        btn.dataset.animating = 'true';
+
+        // Start Flip Out (0 -> 90deg)
+        btn.style.transition = 'transform 0.15s ease-in';
+        btn.style.transform = 'rotateY(90deg)';
 
         setTimeout(() => {
             const currentVal = localStorage.getItem('weight_increment') || '2.5';
@@ -132,7 +159,23 @@ function renderSettings(fromHistory = false) {
             
             document.getElementById('weight-status').textContent = `${newVal} kg`;
             btn.querySelector('.weight-disk').textContent = newVal;
-            btn.classList.remove('icon-animating');
+            
+            // Prepare Flip In (-90deg -> 0)
+            btn.style.transition = 'none';
+            btn.style.transform = 'rotateY(-90deg)';
+            
+            // Force reflow
+            void btn.offsetWidth;
+
+            // Start Flip In
+            btn.style.transition = 'transform 0.15s ease-out';
+            btn.style.transform = 'rotateY(0deg)';
+
+            setTimeout(() => {
+                btn.dataset.animating = 'false';
+                btn.style.transition = '';
+                btn.style.transform = '';
+            }, 150);
         }, 150);
     });
 
@@ -181,56 +224,97 @@ function renderSettings(fromHistory = false) {
             try {
                 const importedData = JSON.parse(event.target.result);
                 if (!importedData.plans || !importedData.exercises) {
-                    alert("Formato file non valido.");
-                    return;
-                }
-
-                if (!confirm("Vuoi importare questo backup? I piani verranno aggiunti e gli esercizi mancanti inseriti.")) {
+                    showAlertModal("Errore", "Formato file non valido.");
                     fileInput.value = '';
                     return;
                 }
 
-                // 1. Import Exercises (Ignore duplicates by name)
-                let addedExercisesCount = 0;
-                importedData.exercises.forEach(impEx => {
-                    const exists = AppState.exercises.some(localEx => 
-                        localEx.name.trim().toLowerCase() === impEx.name.trim().toLowerCase()
-                    );
-                    if (!exists) {
-                        if (AppState.exercises.some(e => e.id === impEx.id)) {
-                            impEx.id = Date.now() + Math.floor(Math.random() * 100000);
-                        }
-                        AppState.exercises.push(impEx);
-                        addedExercisesCount++;
-                    }
-                });
+                // Configura modale di conferma personalizzata
+                const modal = document.getElementById('confirm-modal');
+                const titleEl = modal.querySelector('#confirm-modal-title');
+                const textEl = modal.querySelector('#confirm-modal-text');
+                const confirmBtn = modal.querySelector('#confirm-modal-confirm');
+                const cancelBtn = modal.querySelector('#confirm-modal-cancel');
+
+                titleEl.textContent = "Importa Backup";
+                textEl.textContent = "Vuoi importare questo backup? I piani verranno aggiunti e gli esercizi mancanti inseriti.";
+                textEl.style.whiteSpace = 'normal'; // Reset stile
                 
-                AppState.exercises.sort((a, b) => {
-                    if (a.muscleGroup < b.muscleGroup) return -1;
-                    if (a.muscleGroup > b.muscleGroup) return 1;
-                    return a.name.localeCompare(b.name);
+                cancelBtn.classList.remove('hidden');
+                confirmBtn.textContent = "Importa";
+                confirmBtn.classList.remove('danger-btn');
+
+                const newConfirmBtn = confirmBtn.cloneNode(true);
+                confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
+                
+                const newCancelBtn = cancelBtn.cloneNode(true);
+                cancelBtn.parentNode.replaceChild(newCancelBtn, cancelBtn);
+
+                newCancelBtn.addEventListener('click', () => {
+                    closeModal('confirm-modal');
+                    fileInput.value = '';
                 });
 
-                // 2. Import Plans (Append as new)
-                importedData.plans.forEach(impPlan => {
-                    impPlan.id = Date.now() + Math.floor(Math.random() * 100000);
-                    if (impPlan.routines) {
-                        impPlan.routines.forEach(routine => {
-                            routine.id = Date.now() + Math.floor(Math.random() * 100000);
-                        });
-                    }
-                    AppState.plans.push(impPlan);
+                newConfirmBtn.addEventListener('click', () => {
+                    // 1. Import Exercises (Ignore duplicates by name)
+                    let addedExercisesCount = 0;
+                    importedData.exercises.forEach(impEx => {
+                        const exists = AppState.exercises.some(localEx => 
+                            localEx.name.trim().toLowerCase() === impEx.name.trim().toLowerCase()
+                        );
+                        if (!exists) {
+                            if (AppState.exercises.some(e => e.id === impEx.id)) {
+                                impEx.id = Date.now() + Math.floor(Math.random() * 100000);
+                            }
+                            AppState.exercises.push(impEx);
+                            addedExercisesCount++;
+                        }
+                    });
+                    
+                    AppState.exercises.sort((a, b) => {
+                        if (a.muscleGroup < b.muscleGroup) return -1;
+                        if (a.muscleGroup > b.muscleGroup) return 1;
+                        return a.name.localeCompare(b.name);
+                    });
+
+                    // 2. Import Plans (Append as new)
+                    importedData.plans.forEach(impPlan => {
+                        impPlan.id = Date.now() + Math.floor(Math.random() * 100000);
+                        if (impPlan.routines) {
+                            impPlan.routines.forEach(routine => {
+                                routine.id = Date.now() + Math.floor(Math.random() * 100000);
+                            });
+                        }
+                        AppState.plans.push(impPlan);
+                    });
+
+                    saveAppData();
+                    
+                    // Trasforma la modale in Successo (evita chiudi/apri rapido)
+                    titleEl.textContent = "Successo";
+                    textEl.style.whiteSpace = 'pre-line';
+                    textEl.textContent = `Backup importato!\nEsercizi aggiunti: ${addedExercisesCount}\nPiani aggiunti: ${importedData.plans.length}`;
+                    cancelBtn.classList.add('hidden');
+                    newConfirmBtn.textContent = "OK";
+                    
+                    const okBtn = newConfirmBtn.cloneNode(true);
+                    newConfirmBtn.parentNode.replaceChild(okBtn, newConfirmBtn);
+                    
+                    okBtn.addEventListener('click', () => {
+                        closeModal('confirm-modal');
+                        renderSettings(); 
+                    });
+                    
+                    fileInput.value = '';
                 });
 
-                saveAppData();
-                alert(`Backup importato!\nEsercizi aggiunti: ${addedExercisesCount}\nPiani aggiunti: ${importedData.plans.length}`);
-                renderSettings(); 
+                openModal('confirm-modal');
 
             } catch (err) {
                 console.error(err);
-                alert("Errore durante la lettura del file.");
+                showAlertModal("Errore", "Errore durante la lettura del file.");
+                fileInput.value = '';
             }
-            fileInput.value = '';
         };
         reader.readAsText(file);
     });

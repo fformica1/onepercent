@@ -375,3 +375,15 @@ body.no-scroll {
 .click-animating {
     transform: scale(0.8);
 }
+
+.notif-slash {
+    stroke-dasharray: 30;
+    stroke-dashoffset: 30;
+    opacity: 0;
+    transition: stroke-dashoffset 0.3s ease, opacity 0.3s ease;
+}
+
+.notif-slash.visible {
+    stroke-dashoffset: 0;
+    opacity: 1;
+}

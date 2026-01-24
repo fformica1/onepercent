@@ -76,9 +76,48 @@ function formatRestTime(seconds) {
     return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
 }
 
+function updateSystemNotification() {
+    if (typeof SystemNotifier === 'undefined') return;
+    
+    const routineNameEl = document.querySelector('.workout-routine-name');
+    const routineName = routineNameEl ? routineNameEl.textContent : 'OnePercent';
+    
+    // Determina il prossimo esercizio
+    let nextExerciseName = '';
+    
+    // 1. Se c'è un recupero attivo, usiamo la card target del recupero
+    let targetCard = _cardToScrollToAfterRest;
+    
+    // 2. Se non c'è recupero (o target nullo), cerchiamo il primo esercizio incompleto
+    if (!targetCard) {
+        const allCards = Array.from(document.querySelectorAll('#active-workout-content .workout-card'));
+        targetCard = allCards.find(card => {
+            const cbs = Array.from(card.querySelectorAll('.workout-checkbox'));
+            return cbs.length > 0 && !cbs.every(cb => cb.checked);
+        });
+    }
+    
+    if (targetCard) {
+        const h3 = targetCard.querySelector('h3');
+        if (h3) nextExerciseName = h3.textContent;
+    } else {
+        nextExerciseName = "Allenamento completato";
+    }
+
+    const restTime = (currentRestSeconds > 0) ? formatRestTime(currentRestSeconds) : null;
+    
+    SystemNotifier.updateWorkoutNotification({
+        workoutTime: document.getElementById('workout-timer').textContent,
+        restTime: restTime,
+        routineName: routineName,
+        nextExerciseName: nextExerciseName
+    });
+}
+
 function updateRestDisplay() {
     const display = document.getElementById('rest-timer-display');
     if (display) display.textContent = formatRestTime(currentRestSeconds);
+    updateSystemNotification();
 }
 
 function playTimerFinishedSound() {
@@ -109,6 +148,9 @@ function playTimerFinishedSound() {
 
 function startRestTimer(seconds, nextCardToFocus = null) {
     _cardToScrollToAfterRest = nextCardToFocus;
+
+    // Pulisci notifiche precedenti all'avvio di un nuovo timer per evitare accumuli
+    if (typeof SystemNotifier !== 'undefined') SystemNotifier.clearWorkoutNotification();
 
     // Inizializza/Sblocca AudioContext su interazione utente
     if (!workoutAudioCtx) {
@@ -144,18 +186,35 @@ function startRestTimer(seconds, nextCardToFocus = null) {
                 currentRestSeconds = 0;
                 clearInterval(restInterval);
                 playTimerFinishedSound();
+
                 if (header) header.classList.add('rest-finished');
+
                 if (currentWorkoutSession) {
                     currentWorkoutSession.restFinished = true;
                     saveWorkoutSession();
                 }
+
+                // --- LOGICA NOTIFICA FINE RECUPERO ---
+                const notificationsEnabled = localStorage.getItem('notifications_enabled') === 'true';
+                if (notificationsEnabled && typeof SystemNotifier !== 'undefined') {
+                    const routineNameEl = document.querySelector('.workout-routine-name');
+                    const routineName = routineNameEl ? routineNameEl.textContent : 'Allenamento';
+                    
+                    let nextExerciseName = null;
+                    if (_cardToScrollToAfterRest) {
+                        const nextExerciseNameEl = _cardToScrollToAfterRest.querySelector('h3');
+                        if (nextExerciseNameEl) nextExerciseName = nextExerciseNameEl.textContent;
+                    }
+                    
+                    SystemNotifier.showRestFinishedNotification({ routineName, nextExerciseName });
+                }
+
                 if (_cardToScrollToAfterRest) {
                     scrollToCard(_cardToScrollToAfterRest);
                     _cardToScrollToAfterRest = null; // Usato, quindi resetta
                 }
             }
             updateRestDisplay();
-            // Nota: L'aggiornamento della notifica avviene nel loop principale startWorkoutTimerUI
         }, 1000);
     }
 }
@@ -622,6 +681,7 @@ function renderWorkout(routineId, planId, fromHistory = false) {
 
         startWorkoutTimerUI(currentWorkoutSession.startTime);
         activateWakeLock();
+        updateSystemNotification();
     };
 
     // Smart Input Logic
@@ -958,6 +1018,7 @@ function renderWorkout(routineId, planId, fromHistory = false) {
 
     document.getElementById('btn-save-workout').onclick = () => {
         deactivateWakeLock();
+        if (typeof SystemNotifier !== 'undefined') SystemNotifier.clearWorkoutNotification();
         // Chiudi la modale
         closeModal('end-workout-modal');
 
@@ -1021,6 +1082,7 @@ function renderWorkout(routineId, planId, fromHistory = false) {
 
     document.getElementById('btn-discard-workout').onclick = () => {
         deactivateWakeLock();
+        if (typeof SystemNotifier !== 'undefined') SystemNotifier.clearWorkoutNotification();
         // Chiudi la modale
         closeModal('end-workout-modal');
 
