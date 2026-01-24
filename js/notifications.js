@@ -88,6 +88,7 @@ const SystemNotifier = {
             registration.showNotification(title, {
                 body: body,
                 icon: './notification-icon.png',
+                badge: './notification-icon.png',
                 tag: 'onepercent-workout-status', // Tag fisso per aggiornare la stessa notifica
                 silent: true,      // Niente suono/vibrazione
                 renotify: false,   // Niente avviso visivo/sonoro sugli aggiornamenti
@@ -116,7 +117,13 @@ const SystemNotifier = {
         }
         
         navigator.serviceWorker.ready.then(registration => {
-            registration.showNotification(title, { body, icon: './notification-icon.png', tag: 'onepercent-rest-finished', renotify: true });
+            registration.showNotification(title, { 
+                body, 
+                icon: './notification-icon.png', 
+                badge: './w-notification-icon.png',
+                tag: 'onepercent-rest-finished', 
+                renotify: true 
+            });
         });
     }
 };

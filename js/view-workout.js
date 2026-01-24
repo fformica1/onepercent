@@ -119,6 +119,9 @@ function formatRestTime(seconds) {
 function updateSystemNotification() {
     if (typeof SystemNotifier === 'undefined') return;
     
+    const notificationsEnabled = localStorage.getItem('notifications_enabled') !== 'false';
+    if (!notificationsEnabled) return;
+
     const routineNameEl = document.querySelector('.workout-routine-name');
     const routineName = routineNameEl ? routineNameEl.textContent : 'OnePercent';
     
@@ -258,7 +261,7 @@ function startRestTimer(seconds, nextCardToFocus = null) {
                 }
 
                 // --- LOGICA NOTIFICA FINE RECUPERO ---
-                const notificationsEnabled = localStorage.getItem('notifications_enabled') === 'true';
+                const notificationsEnabled = localStorage.getItem('notifications_enabled') !== 'false';
                 if (notificationsEnabled && typeof SystemNotifier !== 'undefined') {
                     const routineNameEl = document.querySelector('.workout-routine-name');
                     const routineName = routineNameEl ? routineNameEl.textContent : 'Allenamento';

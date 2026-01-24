@@ -84,7 +84,7 @@ function renderSettings(fromHistory = false) {
         </div>
         <input type="file" id="import-file-input" accept=".json" style="display: none;">
         <div style="text-align: center; margin-top: 20px; color: var(--text-muted); font-size: 0.8rem; padding-bottom: 20px;">
-            OnePercent v1.10
+            OnePercent v1.11
         </div>
     `;
 
@@ -130,6 +130,10 @@ function renderSettings(fromHistory = false) {
             }
 
             localStorage.setItem('notifications_enabled', String(newIsEnabled));
+            
+            if (!newIsEnabled && typeof SystemNotifier !== 'undefined') {
+                SystemNotifier.clearWorkoutNotification();
+            }
             
             document.getElementById('notif-status').textContent = newIsEnabled ? 'Abilitate' : 'Disabilitate';
             const slash = document.querySelector('#btn-notif-icon .notif-slash');
