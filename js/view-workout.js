@@ -6,6 +6,7 @@ let workoutAudioCtx = null;
 let wakeLock = null;
 let restEndTime = 0;
 let _cardToScrollToAfterRest = null;
+
 try {
     const savedSession = localStorage.getItem('active_workout_session');
     if (savedSession) currentWorkoutSession = JSON.parse(savedSession);
@@ -251,6 +252,7 @@ function startRestTimer(seconds, nextCardToFocus = null) {
             if (currentRestSeconds <= 0) {
                 currentRestSeconds = 0;
                 clearInterval(restInterval);
+
                 playTimerFinishedSound();
 
                 if (header) header.classList.add('rest-finished');

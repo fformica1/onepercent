@@ -3,6 +3,7 @@
 const SystemNotifier = {
 
     isAndroid: /android/i.test(navigator.userAgent),
+    isIOS: /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1),
 
     /**
      * Requests permission to show notifications.
@@ -10,6 +11,8 @@ const SystemNotifier = {
      * @returns {Promise<boolean>} - True if permission is granted.
      */
     async requestPermission() {
+        if (this.isIOS) return false;
+
         if (!('Notification' in window)) {
             console.log("Questo browser non supporta le notifiche di sistema.");
             return false;
@@ -72,6 +75,15 @@ const SystemNotifier = {
 
     // --- Implementazioni specifiche per piattaforma (da dettagliare) ---
 
+    getAdaptiveIcon() {
+        // Se il sistema è in modalità chiara, usa l'icona dell'app (che ha sfondo/colore scuro)
+        // per contrastare con lo sfondo bianco della notifica.
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
+            return './w-notification-icon.png';
+        }
+        return './notification-icon.png';
+    },
+
     showAndroidPersistentNotification({ workoutTime, restTime, routineName, nextExerciseName, setInfo, targetInfo }) {
         if (!('serviceWorker' in navigator)) return;
 
@@ -87,7 +99,7 @@ const SystemNotifier = {
         navigator.serviceWorker.ready.then(registration => {
             registration.showNotification(title, {
                 body: body,
-                icon: './notification-icon.png',
+                icon: this.getAdaptiveIcon(),
                 badge: './notification-icon.png',
                 tag: 'onepercent-workout-status', // Tag fisso per aggiornare la stessa notifica
                 silent: true,      // Niente suono/vibrazione
@@ -106,7 +118,10 @@ const SystemNotifier = {
      * @param {string} options.targetInfo - Es. "100kg x 8"
      */
     showRestFinishedNotification({ routineName, nextExerciseName, setInfo, targetInfo }) {
-        if (Notification.permission !== 'granted' || this.isAndroid || !('serviceWorker' in navigator)) {
+        // Se l'app è in primo piano, evita la notifica di sistema (l'utente vede già il timer verde)
+        if (document.visibilityState === 'visible') return;
+
+        if (Notification.permission !== 'granted' || this.isAndroid || this.isIOS || !('serviceWorker' in navigator)) {
             return;
         }
 
@@ -119,7 +134,7 @@ const SystemNotifier = {
         navigator.serviceWorker.ready.then(registration => {
             registration.showNotification(title, { 
                 body, 
-                icon: './notification-icon.png', 
+                icon: this.getAdaptiveIcon(),
                 badge: './notification-icon.png',
                 tag: 'onepercent-rest-finished', 
                 renotify: true 

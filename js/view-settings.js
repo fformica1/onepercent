@@ -25,6 +25,7 @@ function renderSettings(fromHistory = false) {
     }
     
     const notifEnabled = localStorage.getItem('notifications_enabled') !== 'false';
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
     const bellIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
         <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
@@ -53,7 +54,7 @@ function renderSettings(fromHistory = false) {
                      <button id="btn-theme-icon" class="action-btn">${themeIcon}</button>
                 </div>
             </div>
-            <div class="routine-card" id="setting-notif-card">
+            <div class="routine-card" id="setting-notif-card" style="${isIOS ? 'display:none;' : ''}">
                 <div>
                     <h3>Notifiche</h3>
                     <small id="notif-status">${notifEnabled ? 'Abilitate' : 'Disabilitate'}</small>
@@ -84,7 +85,7 @@ function renderSettings(fromHistory = false) {
         </div>
         <input type="file" id="import-file-input" accept=".json" style="display: none;">
         <div style="text-align: center; margin-top: 20px; color: var(--text-muted); font-size: 0.8rem; padding-bottom: 20px;">
-            OnePercent v1.12
+            OnePercent v1.13
         </div>
     `;
 

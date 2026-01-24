@@ -1,4 +1,4 @@
-const CACHE_NAME = 'one-percent-v62';
+const CACHE_NAME = 'one-percent-v65';
 const ASSETS_TO_CACHE = [
     './',
     './index.html',
@@ -20,6 +20,7 @@ const ASSETS_TO_CACHE = [
     './js/view-routines.js',
     './js/view-workout.js',
     './js/notifications.js',
+    './w-notification-icon.png',
     './notification-icon.png',
     './manifest.json',
     './favicon.png',

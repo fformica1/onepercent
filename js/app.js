@@ -61,9 +61,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 SystemNotifier.requestPermission();
             }
             document.removeEventListener('click', attemptRequest);
-            document.removeEventListener('touchstart', attemptRequest);
+            document.removeEventListener('touchend', attemptRequest);
         };
         document.addEventListener('click', attemptRequest);
-        document.addEventListener('touchstart', attemptRequest);
+        document.addEventListener('touchend', attemptRequest);
+    }
+
+    // Tenta di forzare l'orientamento verticale via API (supportato principalmente su Android/Chrome)
+    if (screen.orientation && screen.orientation.lock) {
+        screen.orientation.lock('portrait').catch(() => {
+            // Il blocco può fallire su alcuni dispositivi o se non in fullscreen, ignoriamo l'errore
+        });
     }
 });
