@@ -120,7 +120,7 @@ const SystemNotifier = {
             registration.showNotification(title, { 
                 body, 
                 icon: './notification-icon.png', 
-                badge: './w-notification-icon.png',
+                badge: './notification-icon.png',
                 tag: 'onepercent-rest-finished', 
                 renotify: true 
             });

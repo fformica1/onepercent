@@ -52,4 +52,18 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
     }
+
+    // Richiesta permessi notifiche al primo avvio (su interazione utente per policy browser)
+    const notificationsEnabled = localStorage.getItem('notifications_enabled') !== 'false';
+    if (notificationsEnabled && 'Notification' in window && Notification.permission === 'default') {
+        const attemptRequest = () => {
+            if (typeof SystemNotifier !== 'undefined') {
+                SystemNotifier.requestPermission();
+            }
+            document.removeEventListener('click', attemptRequest);
+            document.removeEventListener('touchstart', attemptRequest);
+        };
+        document.addEventListener('click', attemptRequest);
+        document.addEventListener('touchstart', attemptRequest);
+    }
 });

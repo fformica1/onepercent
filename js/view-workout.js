@@ -672,6 +672,7 @@ function renderWorkout(routineId, planId, fromHistory = false) {
             const h = Math.floor(diff / 3600);
             const m = Math.floor((diff % 3600) / 60);
             timerEl.textContent = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+            updateSystemNotification();
         };
         update();
         activeWorkoutInterval = setInterval(() => {
