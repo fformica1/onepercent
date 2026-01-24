@@ -1,4 +1,4 @@
-const CACHE_NAME = 'one-percent-v59';
+const CACHE_NAME = 'one-percent-v60';
 const ASSETS_TO_CACHE = [
     './',
     './index.html',
@@ -51,5 +51,30 @@ self.addEventListener('fetch', (event) => {
     event.respondWith(
         caches.match(event.request, {ignoreSearch: true})
             .then((response) => response || fetch(event.request))
+    );
+});
+
+// Gestione Click Notifica
+self.addEventListener('notificationclick', (event) => {
+    const isPersistent = event.notification.tag === 'onepercent-workout-status';
+    
+    // Chiudi la notifica solo se non è quella persistente dell'allenamento
+    if (!isPersistent) {
+        event.notification.close();
+    }
+
+    event.waitUntil(
+        clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+            for (const client of clientList) {
+                if ('focus' in client) {
+                    return client.focus().then(() => {
+                        client.postMessage({ type: 'NAVIGATE_TO_ACTIVE_EXERCISE' });
+                    });
+                }
+            }
+            if (clients.openWindow) {
+                return clients.openWindow('./?redirect=workout');
+            }
+        })
     );
 });

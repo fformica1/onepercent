@@ -19,13 +19,13 @@ const SystemNotifier = {
             return true;
         }
 
-        // Chiedi il permesso solo se non è stato negato in precedenza
-        if (Notification.permission !== 'denied') {
+        // Tenta sempre la richiesta per rilevare cambiamenti nelle impostazioni di sistema
+        try {
             const permission = await Notification.requestPermission();
             return permission === 'granted';
+        } catch (e) {
+            return false;
         }
-
-        return false;
     },
 
     /**
@@ -35,15 +35,17 @@ const SystemNotifier = {
      * @param {string} options.restTime - e.g., "01:30" or null if not resting
      * @param {string} options.routineName - e.g., "Sessione A"
      * @param {string} options.nextExerciseName - e.g., "Panca Piana"
+     * @param {string} options.setInfo - e.g., "1/3"
+     * @param {string} options.targetInfo - e.g., "100kg x 8"
      */
-    updateWorkoutNotification({ workoutTime, restTime, routineName, nextExerciseName }) {
+    updateWorkoutNotification({ workoutTime, restTime, routineName, nextExerciseName, setInfo, targetInfo }) {
         if (Notification.permission !== 'granted') {
             return;
         }
 
         if (this.isAndroid) {
             // Android: La logica per la notifica persistente andrà qui
-            this.showAndroidPersistentNotification({ workoutTime, restTime, routineName, nextExerciseName }); 
+            this.showAndroidPersistentNotification({ workoutTime, restTime, routineName, nextExerciseName, setInfo, targetInfo }); 
         }
     },
 
@@ -70,14 +72,17 @@ const SystemNotifier = {
 
     // --- Implementazioni specifiche per piattaforma (da dettagliare) ---
 
-    showAndroidPersistentNotification({ workoutTime, restTime, routineName, nextExerciseName }) {
+    showAndroidPersistentNotification({ workoutTime, restTime, routineName, nextExerciseName, setInfo, targetInfo }) {
         if (!('serviceWorker' in navigator)) return;
 
         // Titolo: Se c'è recupero mostra il tempo, altrimenti il nome della routine
         const title = restTime ? `Recupero: ${restTime}` : routineName;
         
-        // Body: Mostra sempre la prossima serie
-        const body = nextExerciseName ? `➜ ${nextExerciseName}` : 'Allenamento in corso';
+        // Body: ➜ 1/3 Panca Piana: 100kg x 8
+        let body = 'Allenamento in corso';
+        if (nextExerciseName) {
+            body = `➜ ${setInfo ? setInfo + ' ' : ''}${nextExerciseName}${targetInfo ? ': ' + targetInfo : ''}`;
+        }
 
         navigator.serviceWorker.ready.then(registration => {
             registration.showNotification(title, {
@@ -96,14 +101,19 @@ const SystemNotifier = {
      * @param {object} options
      * @param {string} options.routineName - Es. "Sessione A"
      * @param {string} options.nextExerciseName - Es. "Panca Piana"
+     * @param {string} options.setInfo - Es. "1/3"
+     * @param {string} options.targetInfo - Es. "100kg x 8"
      */
-    showRestFinishedNotification({ routineName, nextExerciseName }) {
+    showRestFinishedNotification({ routineName, nextExerciseName, setInfo, targetInfo }) {
         if (Notification.permission !== 'granted' || this.isAndroid || !('serviceWorker' in navigator)) {
             return;
         }
 
         const title = routineName;
-        const body = nextExerciseName ? `Recupero terminato\n➜ ${nextExerciseName}` : "Recupero terminato\nAllenamento completato!";
+        let body = "Recupero terminato\nAllenamento completato!";
+        if (nextExerciseName) {
+            body = `Recupero terminato\n➜ ${setInfo ? setInfo + ' ' : ''}${nextExerciseName}${targetInfo ? ': ' + targetInfo : ''}`;
+        }
         
         navigator.serviceWorker.ready.then(registration => {
             registration.showNotification(title, { body, icon: './notification-icon.png', tag: 'onepercent-rest-finished', renotify: true });

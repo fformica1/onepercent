@@ -38,4 +38,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
     renderHome();
     // Il FAB viene inizializzato da renderHome
+
+    // Gestione Redirect da Notifica (Cold Start)
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('redirect') === 'workout') {
+        const savedSession = localStorage.getItem('active_workout_session');
+        if (savedSession) {
+            const session = JSON.parse(savedSession);
+            if (session.startTime) {
+                renderWorkout(session.routineId, session.planId);
+                // Pulisci URL
+                window.history.replaceState({}, document.title, "./");
+            }
+        }
+    }
 });

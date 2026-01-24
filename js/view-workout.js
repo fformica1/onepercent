@@ -34,6 +34,46 @@ function scrollToCard(cardElement) {
     });
 }
 
+function scrollToActiveExercise() {
+    const allCards = Array.from(document.querySelectorAll('#active-workout-content .workout-card'));
+    if (allCards.length === 0) return;
+    
+    // Trova l'ultimo esercizio con almeno una serie completata (attività recente)
+    let lastActiveIndex = -1;
+    for (let i = allCards.length - 1; i >= 0; i--) {
+        if (allCards[i].querySelectorAll('.workout-checkbox:checked').length > 0) {
+            lastActiveIndex = i;
+            break;
+        }
+    }
+
+    let targetCard = null;
+
+    if (lastActiveIndex === -1) {
+        // Nessuna attività: vai al primo incompleto (o il primo in assoluto)
+        targetCard = allCards.find(card => {
+            const cbs = Array.from(card.querySelectorAll('.workout-checkbox'));
+            return cbs.length > 0 && !cbs.every(cb => cb.checked);
+        }) || allCards[0];
+    } else {
+        const lastCard = allCards[lastActiveIndex];
+        const cbs = Array.from(lastCard.querySelectorAll('.workout-checkbox'));
+        const isComplete = cbs.length > 0 && cbs.every(cb => cb.checked);
+
+        if (!isComplete) {
+            // Esercizio in corso: vai qui
+            targetCard = lastCard;
+        } else {
+            // Esercizio completato: cerca il prossimo da fare (logica timer recupero)
+            targetCard = findNextIncompleteCard(lastCard);
+        }
+    }
+
+    if (targetCard) {
+        scrollToCard(targetCard);
+    }
+}
+
 function findNextIncompleteCard(currentCardElement) {
     const allCards = Array.from(document.querySelectorAll('#active-workout-content .workout-card'));
     const currentIndex = allCards.findIndex(card => card === currentCardElement);
@@ -84,6 +124,8 @@ function updateSystemNotification() {
     
     // Determina il prossimo esercizio
     let nextExerciseName = '';
+    let setInfo = '';
+    let targetInfo = '';
     
     // 1. Se c'è un recupero attivo, usiamo la card target del recupero
     let targetCard = _cardToScrollToAfterRest;
@@ -100,6 +142,25 @@ function updateSystemNotification() {
     if (targetCard) {
         const h3 = targetCard.querySelector('h3');
         if (h3) nextExerciseName = h3.textContent;
+
+        // Estrai info serie corrente
+        const rows = Array.from(targetCard.querySelectorAll('.workout-set-row'));
+        const totalSets = rows.length;
+        // Trova la prima serie non completata
+        const nextSetIndex = rows.findIndex(row => !row.querySelector('.workout-checkbox').checked);
+        
+        if (nextSetIndex !== -1) {
+            const row = rows[nextSetIndex];
+            setInfo = `${nextSetIndex + 1}/${totalSets}`;
+            
+            const wInput = row.querySelector('.input-weight');
+            const rInput = row.querySelector('.input-reps');
+            // Usa il valore inserito o il placeholder (target)
+            const weight = wInput.value || wInput.placeholder || '-';
+            const reps = rInput.value || rInput.placeholder || '-';
+            
+            targetInfo = `${weight}kg x ${reps}`;
+        }
     } else {
         nextExerciseName = "Allenamento completato";
     }
@@ -110,7 +171,9 @@ function updateSystemNotification() {
         workoutTime: document.getElementById('workout-timer').textContent,
         restTime: restTime,
         routineName: routineName,
-        nextExerciseName: nextExerciseName
+        nextExerciseName: nextExerciseName,
+        setInfo: setInfo,
+        targetInfo: targetInfo
     });
 }
 
@@ -201,12 +264,32 @@ function startRestTimer(seconds, nextCardToFocus = null) {
                     const routineName = routineNameEl ? routineNameEl.textContent : 'Allenamento';
                     
                     let nextExerciseName = null;
+                    let setInfo = '';
+                    let targetInfo = '';
+
                     if (_cardToScrollToAfterRest) {
                         const nextExerciseNameEl = _cardToScrollToAfterRest.querySelector('h3');
                         if (nextExerciseNameEl) nextExerciseName = nextExerciseNameEl.textContent;
+
+                        // Estrai info serie corrente
+                        const rows = Array.from(_cardToScrollToAfterRest.querySelectorAll('.workout-set-row'));
+                        const totalSets = rows.length;
+                        const nextSetIndex = rows.findIndex(row => !row.querySelector('.workout-checkbox').checked);
+                        
+                        if (nextSetIndex !== -1) {
+                            const row = rows[nextSetIndex];
+                            setInfo = `${nextSetIndex + 1}/${totalSets}`;
+                            
+                            const wInput = row.querySelector('.input-weight');
+                            const rInput = row.querySelector('.input-reps');
+                            const weight = wInput.value || wInput.placeholder || '-';
+                            const reps = rInput.value || rInput.placeholder || '-';
+                            
+                            targetInfo = `${weight}kg x ${reps}`;
+                        }
                     }
                     
-                    SystemNotifier.showRestFinishedNotification({ routineName, nextExerciseName });
+                    SystemNotifier.showRestFinishedNotification({ routineName, nextExerciseName, setInfo, targetInfo });
                 }
 
                 if (_cardToScrollToAfterRest) {
@@ -614,42 +697,7 @@ function renderWorkout(routineId, planId, fromHistory = false) {
 
         // Scroll automatico intelligente (riprende dall'ultimo esercizio attivo)
         setTimeout(() => {
-            const allCards = Array.from(document.querySelectorAll('#active-workout-content .workout-card'));
-            
-            // Trova l'ultimo esercizio con almeno una serie completata (attività recente)
-            let lastActiveIndex = -1;
-            for (let i = allCards.length - 1; i >= 0; i--) {
-                if (allCards[i].querySelectorAll('.workout-checkbox:checked').length > 0) {
-                    lastActiveIndex = i;
-                    break;
-                }
-            }
-
-            let targetCard = null;
-
-            if (lastActiveIndex === -1) {
-                // Nessuna attività: vai al primo incompleto (o il primo in assoluto)
-                targetCard = allCards.find(card => {
-                    const cbs = Array.from(card.querySelectorAll('.workout-checkbox'));
-                    return cbs.length > 0 && !cbs.every(cb => cb.checked);
-                }) || allCards[0];
-            } else {
-                const lastCard = allCards[lastActiveIndex];
-                const cbs = Array.from(lastCard.querySelectorAll('.workout-checkbox'));
-                const isComplete = cbs.length > 0 && cbs.every(cb => cb.checked);
-
-                if (!isComplete) {
-                    // Esercizio in corso: vai qui
-                    targetCard = lastCard;
-                } else {
-                    // Esercizio completato: cerca il prossimo da fare (logica timer recupero)
-                    targetCard = findNextIncompleteCard(lastCard);
-                }
-            }
-
-            if (targetCard) {
-                scrollToCard(targetCard);
-            }
+            scrollToActiveExercise();
         }, 400); // Aumentato a 400ms per attendere fine transizione e layout stabile
     }
 
@@ -1112,4 +1160,26 @@ function renderWorkout(routineId, planId, fromHistory = false) {
 
     setFabAction(null); // No FAB during workout
     switchView('workout');
+}
+
+// Listener per messaggi dal Service Worker (Click Notifica)
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.addEventListener('message', (event) => {
+        if (event.data && event.data.type === 'NAVIGATE_TO_ACTIVE_EXERCISE') {
+            if (AppState.currentView === 'workout') {
+                scrollToActiveExercise();
+            } else {
+                // Se non siamo nella vista workout, prova a ripristinare la sessione
+                try {
+                    const savedSession = localStorage.getItem('active_workout_session');
+                    if (savedSession) {
+                        const session = JSON.parse(savedSession);
+                        if (session.startTime) {
+                            renderWorkout(session.routineId, session.planId);
+                        }
+                    }
+                } catch(e) {}
+            }
+        }
+    });
 }

@@ -84,7 +84,7 @@ function renderSettings(fromHistory = false) {
         </div>
         <input type="file" id="import-file-input" accept=".json" style="display: none;">
         <div style="text-align: center; margin-top: 20px; color: var(--text-muted); font-size: 0.8rem; padding-bottom: 20px;">
-            OnePercent v1.9
+            OnePercent v1.10
         </div>
     `;
 
@@ -121,7 +121,7 @@ function renderSettings(fromHistory = false) {
                 if (typeof SystemNotifier !== 'undefined') {
                     const permissionGranted = await SystemNotifier.requestPermission();
                     if (!permissionGranted) {
-                        showAlertModal("Permesso Negato", "Permesso per le notifiche negato. Non sarà possibile mostrare avvisi durante l'allenamento.");
+                        showAlertModal("Permesso Negato", "Permesso per le notifiche negato. Consenti l'accesso alle notifiche dalle impostazioni di sistema dell'app.");
                         newIsEnabled = false; // Forza lo stato a rimanere disabilitato
                     }
                 } else {
