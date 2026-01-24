@@ -104,6 +104,17 @@
         // Gestione Navigazione Sistema (Back Button / Gesture)
         window.addEventListener('popstate', (event) => {
             const state = event.state;
+            
+            // Gestione chiusura modali con tasto indietro
+            const openModals = document.querySelectorAll('.modal-overlay.open');
+            if (openModals.length > 0) {
+                openModals.forEach(modal => closeModal(modal.id));
+                // Se siamo rimasti nella stessa vista (solo chiuso modale), fermiamo qui
+                if (state && state.view === AppState.currentView) {
+                    return;
+                }
+            }
+
             if (!state) {
                 if (typeof renderHome === 'function') renderHome(true);
                 return;

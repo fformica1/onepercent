@@ -290,6 +290,11 @@ function renderWorkout(routineId, planId, fromHistory = false) {
         history.pushState({view: 'workout', routineId, planId}, 'Allenamento', '#workout');
     }
 
+    // Disabilita il ripristino automatico dello scroll del browser per garantire che il magnetismo funzioni
+    if ('scrollRestoration' in history) {
+        history.scrollRestoration = 'manual';
+    }
+
     const container = Views.workout;
     const plan = AppState.plans.find(p => p.id === planId);
     const routine = plan ? plan.routines.find(r => r.id === routineId) : null;
@@ -548,18 +553,45 @@ function renderWorkout(routineId, planId, fromHistory = false) {
             else if (!currentWorkoutSession.restFinished) { /* Opzionale: gestire fine timer mentre offline */ }
         }
 
-        // Scroll automatico all'esercizio corrente (primo non completato)
+        // Scroll automatico intelligente (riprende dall'ultimo esercizio attivo)
         setTimeout(() => {
             const allCards = Array.from(document.querySelectorAll('#active-workout-content .workout-card'));
-            const firstIncomplete = allCards.find(card => {
-                const checkboxes = Array.from(card.querySelectorAll('.workout-checkbox'));
-                return checkboxes.length > 0 && !checkboxes.every(cb => cb.checked);
-            });
-
-            if (firstIncomplete) {
-                scrollToCard(firstIncomplete);
+            
+            // Trova l'ultimo esercizio con almeno una serie completata (attività recente)
+            let lastActiveIndex = -1;
+            for (let i = allCards.length - 1; i >= 0; i--) {
+                if (allCards[i].querySelectorAll('.workout-checkbox:checked').length > 0) {
+                    lastActiveIndex = i;
+                    break;
+                }
             }
-        }, 300);
+
+            let targetCard = null;
+
+            if (lastActiveIndex === -1) {
+                // Nessuna attività: vai al primo incompleto (o il primo in assoluto)
+                targetCard = allCards.find(card => {
+                    const cbs = Array.from(card.querySelectorAll('.workout-checkbox'));
+                    return cbs.length > 0 && !cbs.every(cb => cb.checked);
+                }) || allCards[0];
+            } else {
+                const lastCard = allCards[lastActiveIndex];
+                const cbs = Array.from(lastCard.querySelectorAll('.workout-checkbox'));
+                const isComplete = cbs.length > 0 && cbs.every(cb => cb.checked);
+
+                if (!isComplete) {
+                    // Esercizio in corso: vai qui
+                    targetCard = lastCard;
+                } else {
+                    // Esercizio completato: cerca il prossimo da fare (logica timer recupero)
+                    targetCard = findNextIncompleteCard(lastCard);
+                }
+            }
+
+            if (targetCard) {
+                scrollToCard(targetCard);
+            }
+        }, 400); // Aumentato a 400ms per attendere fine transizione e layout stabile
     }
 
     // Helper: Inizializza sessione se modifico qualcosa prima di start

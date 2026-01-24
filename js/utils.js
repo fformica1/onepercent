@@ -107,6 +107,13 @@ function setFabAction(action, iconHtml) {
 function openModal(modalId) {
     const modal = document.getElementById(modalId);
     if (!modal) return;
+
+    // Push history state per gestire il tasto indietro
+    if (window.history.state && window.history.state.modalOpen !== modalId) {
+        const newState = { ...window.history.state, modalOpen: modalId };
+        window.history.pushState(newState, '', window.location.hash);
+    }
+
     modal.classList.remove('hidden');
     // Force reflow per attivare la transizione CSS
     void modal.offsetWidth; 
@@ -144,6 +151,12 @@ function openModal(modalId) {
 function closeModal(modalId) {
     const modal = document.getElementById(modalId);
     if (!modal) return;
+    
+    // Se la modale è associata allo stato corrente della history, torniamo indietro
+    // (Questo accade quando si chiude col tasto "Annulla" o "Salva", non col tasto indietro)
+    if (window.history.state && window.history.state.modalOpen === modalId) {
+        window.history.back();
+    }
     
     // Rimuovi listener viewport se presenti
     if (modal._viewportHandler && window.visualViewport) {
