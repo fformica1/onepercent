@@ -3,7 +3,7 @@
 const SystemNotifier = {
 
     isAndroid: /android/i.test(navigator.userAgent),
-    isIOS: /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1),
+    isIOS: /iPad|iPhone|iPod/.test(navigator.userAgent),
 
     /**
      * Requests permission to show notifications.
