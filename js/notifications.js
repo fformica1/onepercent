@@ -64,10 +64,8 @@ const SystemNotifier = {
 
         // Chiude le notifiche dell'app tramite il service worker
         navigator.serviceWorker.ready.then(registration => {
-            registration.getNotifications({ tag: 'onepercent-rest-finished' }).then(notifications => {
-                notifications.forEach(notification => notification.close());
-            });
-            registration.getNotifications({ tag: 'onepercent-workout-status' }).then(notifications => {
+            // Chiude TUTTE le notifiche dell'app per garantire la pulizia completa
+            registration.getNotifications().then(notifications => {
                 notifications.forEach(notification => notification.close());
             });
         });

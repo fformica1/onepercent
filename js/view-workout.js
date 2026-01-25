@@ -1,5 +1,104 @@
-let activeWorkoutInterval = null;
-let restInterval = null;
+// Worker per gestire i timer in background senza throttling
+const timerWorkerBlob = new Blob([`
+    let timer = null;
+    self.onmessage = function(e) {
+        if (e.data === 'start') {
+            if (timer) clearInterval(timer);
+            timer = setInterval(() => {
+                self.postMessage('tick');
+            }, 1000);
+        } else if (e.data === 'stop') {
+            if (timer) clearInterval(timer);
+            timer = null;
+        }
+    };
+`], {type: 'application/javascript'});
+
+let timerWorker = null;
+
+function initTimerWorker() {
+    if (!timerWorker) {
+        timerWorker = new Worker(URL.createObjectURL(timerWorkerBlob));
+        timerWorker.onmessage = () => handleGlobalTick();
+    }
+}
+
+function handleGlobalTick() {
+    const now = Date.now();
+
+    // 1. Aggiorna Timer Allenamento UI
+    if (currentWorkoutSession && currentWorkoutSession.startTime) {
+        const diff = Math.floor((now - currentWorkoutSession.startTime) / 1000);
+        const h = Math.floor(diff / 3600);
+        const m = Math.floor((diff % 3600) / 60);
+        const timerEl = document.getElementById('workout-timer');
+        if (timerEl) timerEl.textContent = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+    }
+
+    // 2. Gestione Timer Recupero
+    if (restEndTime > 0) {
+        currentRestSeconds = Math.ceil((restEndTime - now) / 1000);
+        
+        if (currentRestSeconds <= 0) {
+            currentRestSeconds = 0;
+            restEndTime = 0; // Stop checking
+            
+            playTimerFinishedSound();
+
+            const header = document.querySelector('.workout-header');
+            if (header) header.classList.add('rest-finished');
+
+            if (currentWorkoutSession) {
+                currentWorkoutSession.restFinished = true;
+                saveWorkoutSession();
+            }
+
+            // --- LOGICA NOTIFICA FINE RECUPERO ---
+            const notificationsEnabled = localStorage.getItem('notifications_enabled') !== 'false';
+            if (notificationsEnabled && typeof SystemNotifier !== 'undefined') {
+                const routineNameEl = document.querySelector('.workout-routine-name');
+                const routineName = routineNameEl ? routineNameEl.textContent : 'Allenamento';
+                
+                let nextExerciseName = null;
+                let setInfo = '';
+                let targetInfo = '';
+
+                if (_cardToScrollToAfterRest) {
+                    const nextExerciseNameEl = _cardToScrollToAfterRest.querySelector('h3');
+                    if (nextExerciseNameEl) nextExerciseName = nextExerciseNameEl.textContent;
+
+                    const rows = Array.from(_cardToScrollToAfterRest.querySelectorAll('.workout-set-row'));
+                    const totalSets = rows.length;
+                    const nextSetIndex = rows.findIndex(row => !row.querySelector('.workout-checkbox').checked);
+                    
+                    if (nextSetIndex !== -1) {
+                        const row = rows[nextSetIndex];
+                        setInfo = `${nextSetIndex + 1}/${totalSets}`;
+                        
+                        const wInput = row.querySelector('.input-weight');
+                        const rInput = row.querySelector('.input-reps');
+                        const weight = wInput.value || wInput.placeholder || '-';
+                        const reps = rInput.value || rInput.placeholder || '-';
+                        
+                        targetInfo = `${weight}kg x ${reps}`;
+                    }
+                }
+                
+                SystemNotifier.showRestFinishedNotification({ routineName, nextExerciseName, setInfo, targetInfo });
+            }
+
+            if (_cardToScrollToAfterRest) {
+                scrollToCard(_cardToScrollToAfterRest);
+                _cardToScrollToAfterRest = null;
+            }
+        }
+        updateRestDisplay();
+    }
+
+    // 3. Aggiorna Notifica Persistente
+    updateSystemNotification();
+}
+
 let currentRestSeconds = 0;
 let currentWorkoutSession = null;
 let workoutAudioCtx = null;
@@ -237,78 +336,15 @@ function startRestTimer(seconds, nextCardToFocus = null) {
         saveWorkoutSession();
     }
 
-    if (restInterval) clearInterval(restInterval);
     currentRestSeconds = seconds;
     updateRestDisplay();
     
     // Se non abbiamo salvato in sessione (es. test), calcoliamo comunque locale
     if (!currentWorkoutSession) restEndTime = Date.now() + (seconds * 1000);
-
-    if (currentRestSeconds > 0) {
-        restInterval = setInterval(() => {
-            const now = Date.now();
-            currentRestSeconds = Math.ceil((restEndTime - now) / 1000);
-            
-            if (currentRestSeconds <= 0) {
-                currentRestSeconds = 0;
-                clearInterval(restInterval);
-
-                playTimerFinishedSound();
-
-                if (header) header.classList.add('rest-finished');
-
-                if (currentWorkoutSession) {
-                    currentWorkoutSession.restFinished = true;
-                    saveWorkoutSession();
-                }
-
-                // --- LOGICA NOTIFICA FINE RECUPERO ---
-                const notificationsEnabled = localStorage.getItem('notifications_enabled') !== 'false';
-                if (notificationsEnabled && typeof SystemNotifier !== 'undefined') {
-                    const routineNameEl = document.querySelector('.workout-routine-name');
-                    const routineName = routineNameEl ? routineNameEl.textContent : 'Allenamento';
-                    
-                    let nextExerciseName = null;
-                    let setInfo = '';
-                    let targetInfo = '';
-
-                    if (_cardToScrollToAfterRest) {
-                        const nextExerciseNameEl = _cardToScrollToAfterRest.querySelector('h3');
-                        if (nextExerciseNameEl) nextExerciseName = nextExerciseNameEl.textContent;
-
-                        // Estrai info serie corrente
-                        const rows = Array.from(_cardToScrollToAfterRest.querySelectorAll('.workout-set-row'));
-                        const totalSets = rows.length;
-                        const nextSetIndex = rows.findIndex(row => !row.querySelector('.workout-checkbox').checked);
-                        
-                        if (nextSetIndex !== -1) {
-                            const row = rows[nextSetIndex];
-                            setInfo = `${nextSetIndex + 1}/${totalSets}`;
-                            
-                            const wInput = row.querySelector('.input-weight');
-                            const rInput = row.querySelector('.input-reps');
-                            const weight = wInput.value || wInput.placeholder || '-';
-                            const reps = rInput.value || rInput.placeholder || '-';
-                            
-                            targetInfo = `${weight}kg x ${reps}`;
-                        }
-                    }
-                    
-                    SystemNotifier.showRestFinishedNotification({ routineName, nextExerciseName, setInfo, targetInfo });
-                }
-
-                if (_cardToScrollToAfterRest) {
-                    scrollToCard(_cardToScrollToAfterRest);
-                    _cardToScrollToAfterRest = null; // Usato, quindi resetta
-                }
-            }
-            updateRestDisplay();
-        }, 1000);
-    }
 }
 
 function adjustRestTimer(seconds) {
-    if (restInterval) {
+    if (restEndTime > 0) {
         restEndTime += (seconds * 1000);
         const now = Date.now();
         currentRestSeconds = Math.ceil((restEndTime - now) / 1000);
@@ -338,7 +374,6 @@ function adjustRestTimer(seconds) {
 }
 
 function skipRestTimer() {
-    if (restInterval) clearInterval(restInterval);
     _cardToScrollToAfterRest = null;
     restEndTime = 0;
     currentRestSeconds = 0;
@@ -480,8 +515,7 @@ function renderWorkout(routineId, planId, fromHistory = false) {
 
     // Se NON stiamo riprendendo la stessa sessione E NON siamo in sola lettura (quindi nuovo allenamento legittimo)
     if (!isResuming && !isReadOnly) {
-        if (activeWorkoutInterval) clearInterval(activeWorkoutInterval);
-        if (restInterval) clearInterval(restInterval);
+        if (timerWorker) timerWorker.postMessage('stop');
         currentRestSeconds = 0;
         currentWorkoutSession = null;
         localStorage.removeItem('active_workout_session');
@@ -667,19 +701,10 @@ function renderWorkout(routineId, planId, fromHistory = false) {
 
     // Helper: Avvia/Ripristina Timer UI
     const startWorkoutTimerUI = (startTime) => {
-        if (activeWorkoutInterval) clearInterval(activeWorkoutInterval);
-        const update = () => {
-            const now = Date.now();
-            const diff = Math.floor((now - startTime) / 1000);
-            const h = Math.floor(diff / 3600);
-            const m = Math.floor((diff % 3600) / 60);
-            timerEl.textContent = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
-            updateSystemNotification();
-        };
-        update();
-        activeWorkoutInterval = setInterval(() => {
-            update();
-        }, 1000);
+        initTimerWorker();
+        timerWorker.postMessage('start');
+        // Primo aggiornamento immediato
+        handleGlobalTick();
     };
 
     // Se stiamo riprendendo, ripristina UI
@@ -1081,8 +1106,7 @@ function renderWorkout(routineId, planId, fromHistory = false) {
         const sessionTimestamp = Date.now();
 
         // I dati sono già salvati "on the fly". Puliamo solo lo stato.
-        clearInterval(activeWorkoutInterval);
-        if (restInterval) clearInterval(restInterval);
+        if (timerWorker) timerWorker.postMessage('stop');
         currentWorkoutSession = null;
 
         let hasAnyCompletedSeries = false;
@@ -1152,8 +1176,7 @@ function renderWorkout(routineId, planId, fromHistory = false) {
                 }
             }
         }
-        clearInterval(activeWorkoutInterval);
-        if (restInterval) clearInterval(restInterval);
+        if (timerWorker) timerWorker.postMessage('stop');
         currentWorkoutSession = null;
         localStorage.removeItem('active_workout_session');
         history.back(); // Torna alla Home pulita
