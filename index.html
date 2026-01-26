@@ -15,6 +15,7 @@
     <link rel="stylesheet" href="css/view-workout.css">
     <link rel="stylesheet" href="css/view-exercises.css">
     <link rel="stylesheet" href="css/view-calendar.css">
+    <link rel="stylesheet" href="css/view-rest-timer.css">
     <link rel="manifest" href="manifest.json?v=2">
     <link rel="icon" href="favicon.png" type="image/png">
     <link rel="apple-touch-icon" href="app-icon.png">
@@ -59,6 +60,9 @@
         <div id="view-workout" class="view hidden"></div>
     </main>
 
+    <!-- VISTA: TIMER RECUPERO FULLSCREEN -->
+    <div id="view-rest-timer" class="view hidden"></div>
+
     <!-- Calendar View -->
     <div id="view-calendar" class="view hidden"></div>
 
@@ -94,6 +98,7 @@
     <script src="js/state.js"></script>
     <script src="js/utils.js"></script>
     <script src="js/notifications.js"></script>
+    <script src="js/view-rest-timer.js"></script>
     <script src="js/view-calendar.js"></script>
     <script src="js/view-home.js"></script>
     <script src="js/view-plans.js"></script>
@@ -114,6 +119,10 @@
                 if (state && state.view === AppState.currentView) {
                     return;
                 }
+            }
+
+            if (AppState.currentView === 'restTimer' && (!state || state.view !== 'restTimer')) {
+                // Lascia che il flusso prosegua per renderizzare la vista precedente (es. workout)
             }
 
             if (!state) {
@@ -140,6 +149,9 @@
                     break;
                 case 'workout':
                     renderWorkout(state.routineId, state.planId, true);
+                    break;
+                case 'restTimer':
+                    // Gestito da view-rest-timer.js
                     break;
                 case 'routineEditor':
                     renderRoutineEditor(state.routineId, state.planId, true);

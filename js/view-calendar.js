@@ -32,6 +32,8 @@ function renderCalendar() {
                         if (routine.history) {
                             routine.history.filter(h => h.date === date).forEach(h => {
                                 explicitSessions.push({
+                                    planId: plan.id,
+                                    routineId: routine.id,
                                     routineName: routine.name,
                                     duration: h.duration,
                                     timestamp: h.timestamp,
@@ -77,10 +79,13 @@ function renderCalendar() {
                         explicitSessions.forEach(s => {
                             if (s.exercises.length > 0) {
                                 historyMap[dateKey].push({
+                                    planId: s.planId,
+                                    routineId: s.routineId,
                                     routineName: s.routineName,
                                     duration: s.duration,
                                     exercises: s.exercises,
-                                    timestamp: s.timestamp
+                                    timestamp: s.timestamp,
+                                    dateString: date
                                 });
                             }
                         });
@@ -95,10 +100,13 @@ function renderCalendar() {
 
                         Object.keys(orphanGroups).forEach(key => {
                             historyMap[dateKey].push({
+                                planId: plan.id,
+                                routineId: routine.id,
                                 routineName: routine.name,
                                 duration: 0, 
                                 exercises: orphanGroups[key],
-                                timestamp: key === 'legacy' ? 0 : parseInt(key)
+                                timestamp: key === 'legacy' ? 0 : parseInt(key),
+                                dateString: date
                             });
                         });
                     });
@@ -216,9 +224,14 @@ function renderCalendar() {
 
                     return `
                         <div class="calendar-summary-card">
-                            <div class="summary-header">
+                            <div class="summary-header" style="display: flex; justify-content: space-between; align-items: center;">
                                 <h4>${session.routineName}</h4>
-                                <div class="summary-meta">${durationText}</div>
+                                <div style="display: flex; align-items: center; gap: 15px;">
+                                    ${durationText ? `<div class="summary-meta">${durationText}</div>` : ''}
+                                    <button class="action-btn delete-session-btn" data-plan-id="${session.planId}" data-routine-id="${session.routineId}" data-timestamp="${session.timestamp}" data-date-string="${session.dateString}" style="background: transparent; border: none; box-shadow: none; color: var(--text-muted); padding: 0;">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                                    </button>
+                                </div>
                             </div>
                             <ul class="summary-exercises-list">
                                 ${exercisesList}
@@ -233,6 +246,60 @@ function renderCalendar() {
             }
         });
     });
+
+    // Gestione Eliminazione Allenamento (Delegata sul container del sommario)
+    const summaryContainer = document.getElementById('calendar-summary-container');
+    if (summaryContainer) {
+        summaryContainer.addEventListener('click', (e) => {
+            const deleteBtn = e.target.closest('.delete-session-btn');
+            if (deleteBtn) {
+                e.stopPropagation();
+                const planId = parseFloat(deleteBtn.dataset.planId);
+                const routineId = parseFloat(deleteBtn.dataset.routineId);
+                const timestamp = parseFloat(deleteBtn.dataset.timestamp);
+                const dateString = deleteBtn.dataset.dateString;
+
+                showConfirmationModal(
+                    "Elimina Allenamento",
+                    "Sei sicuro di voler eliminare questo allenamento dallo storico? L'azione è irreversibile.",
+                    () => {
+                        const plan = AppState.plans.find(p => p.id === planId);
+                        if (plan) {
+                            const routine = plan.routines.find(r => r.id === routineId);
+                            if (routine) {
+                                // Rimuovi dallo storico della routine
+                                if (routine.history) {
+                                    routine.history = routine.history.filter(h => {
+                                        if (timestamp > 0) return h.timestamp !== timestamp;
+                                        return h.date !== dateString;
+                                    });
+                                }
+                                // Rimuovi dallo storico degli esercizi
+                                if (routine.exercises) {
+                                    routine.exercises.forEach(ex => {
+                                        if (ex.history) {
+                                            ex.history = ex.history.filter(h => {
+                                                if (timestamp > 0) return h.timestamp !== timestamp;
+                                                return h.date !== dateString;
+                                            });
+                                        }
+                                    });
+                                }
+                                saveAppData();
+                                renderCalendar();
+                                // Ripristina la vista sul giorno selezionato
+                                const dateKey = new Date(dateString).toDateString();
+                                setTimeout(() => {
+                                    const dayEl = container.querySelector(`.calendar-day[data-date="${dateKey}"]`);
+                                    if (dayEl) dayEl.click();
+                                }, 50);
+                            }
+                        }
+                    }
+                );
+            }
+        });
+    }
 
     // Seleziona oggi di default
     const todayEl = container.querySelector('.calendar-day.today');

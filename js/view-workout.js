@@ -45,6 +45,11 @@ function handleGlobalTick() {
             
             playTimerFinishedSound();
 
+            // Auto-chiusura del timer a schermo intero
+            if (typeof RestTimerView !== 'undefined') {
+                RestTimerView.close();
+            }
+
             const header = document.querySelector('.workout-header');
             if (header) header.classList.add('rest-finished');
 
@@ -93,6 +98,11 @@ function handleGlobalTick() {
             }
         }
         updateRestDisplay();
+
+        // Aggiorna il timer a schermo intero se attivo
+        if (AppState.currentView === 'restTimer' && typeof RestTimerView !== 'undefined') {
+            RestTimerView.update(currentRestSeconds);
+        }
     }
 
     // 3. Aggiorna Notifica Persistente
@@ -210,12 +220,6 @@ function saveWorkoutSession() {
     }
 }
 
-function formatRestTime(seconds) {
-    const m = Math.floor(seconds / 60);
-    const s = seconds % 60;
-    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-}
-
 function updateSystemNotification() {
     if (typeof SystemNotifier === 'undefined') return;
     
@@ -225,6 +229,21 @@ function updateSystemNotification() {
     const routineNameEl = document.querySelector('.workout-routine-name');
     const routineName = routineNameEl ? routineNameEl.textContent : 'OnePercent';
     
+    const info = getNextExerciseInfo();
+
+    const restTime = (currentRestSeconds > 0) ? formatRestTime(currentRestSeconds) : null;
+    
+    SystemNotifier.updateWorkoutNotification({
+        workoutTime: document.getElementById('workout-timer').textContent,
+        restTime: restTime,
+        routineName: routineName,
+        nextExerciseName: info.name,
+        setInfo: info.setInfo,
+        targetInfo: info.targetInfo
+    });
+}
+
+function getNextExerciseInfo() {
     // Determina il prossimo esercizio
     let nextExerciseName = '';
     let setInfo = '';
@@ -267,17 +286,8 @@ function updateSystemNotification() {
     } else {
         nextExerciseName = "Allenamento completato";
     }
-
-    const restTime = (currentRestSeconds > 0) ? formatRestTime(currentRestSeconds) : null;
     
-    SystemNotifier.updateWorkoutNotification({
-        workoutTime: document.getElementById('workout-timer').textContent,
-        restTime: restTime,
-        routineName: routineName,
-        nextExerciseName: nextExerciseName,
-        setInfo: setInfo,
-        targetInfo: targetInfo
-    });
+    return { name: nextExerciseName, setInfo, targetInfo };
 }
 
 function updateRestDisplay() {
@@ -312,7 +322,7 @@ function playTimerFinishedSound() {
     playBeep(now + 0.15); // Secondo beep ravvicinato
 }
 
-function startRestTimer(seconds, nextCardToFocus = null) {
+function startRestTimer(seconds, nextCardToFocus = null, showFullscreen = true) {
     _cardToScrollToAfterRest = nextCardToFocus;
 
     // Pulisci notifiche precedenti all'avvio di un nuovo timer per evitare accumuli
@@ -341,19 +351,22 @@ function startRestTimer(seconds, nextCardToFocus = null) {
     
     // Se non abbiamo salvato in sessione (es. test), calcoliamo comunque locale
     if (!currentWorkoutSession) restEndTime = Date.now() + (seconds * 1000);
+
+    // Apri Timer Fullscreen se abilitato
+    if (showFullscreen && typeof RestTimerView !== 'undefined') {
+        RestTimerView.show(seconds, getNextExerciseInfo());
+    }
 }
 
 function adjustRestTimer(seconds) {
-    if (restEndTime > 0) {
-        restEndTime += (seconds * 1000);
-        const now = Date.now();
-        currentRestSeconds = Math.ceil((restEndTime - now) / 1000);
-        if (currentWorkoutSession) {
-            currentWorkoutSession.restEndTime = restEndTime;
-            saveWorkoutSession();
-        }
-    } else {
-        currentRestSeconds += seconds;
+    if (restEndTime <= 0) return;
+
+    restEndTime += (seconds * 1000);
+    const now = Date.now();
+    currentRestSeconds = Math.ceil((restEndTime - now) / 1000);
+    if (currentWorkoutSession) {
+        currentWorkoutSession.restEndTime = restEndTime;
+        saveWorkoutSession();
     }
     
     if (currentRestSeconds < 0) currentRestSeconds = 0;
@@ -374,6 +387,8 @@ function adjustRestTimer(seconds) {
 }
 
 function skipRestTimer() {
+    if (restEndTime <= 0) return;
+
     _cardToScrollToAfterRest = null;
     restEndTime = 0;
     currentRestSeconds = 0;
@@ -722,7 +737,7 @@ function renderWorkout(routineId, planId, fromHistory = false) {
         if (currentWorkoutSession.restEndTime) {
             const now = Date.now();
             const remaining = Math.ceil((currentWorkoutSession.restEndTime - now) / 1000);
-            if (remaining > 0) startRestTimer(remaining);
+            if (remaining > 0) startRestTimer(remaining, null, false);
             else if (!currentWorkoutSession.restFinished) { /* Opzionale: gestire fine timer mentre offline */ }
         }
 

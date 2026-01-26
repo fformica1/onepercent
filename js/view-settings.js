@@ -34,12 +34,21 @@ function renderSettings(fromHistory = false) {
     </svg>`;
 
     const weightIncrement = localStorage.getItem('weight_increment') || '2.5';
+    const fullscreenTimerEnabled = localStorage.getItem('fullscreen_timer_enabled') === 'true';
     
     const weightIconHtml = `
         <div id="btn-weight-icon" style="width: 30px; height: 30px; position: relative; cursor: pointer;">
             <div class="weight-disk">${weightIncrement}</div>
         </div>
     `;
+
+    const alarmIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="13" r="8"></circle>
+        <polyline points="12 9 12 13 16 15"></polyline>
+        <line x1="5" y1="6" x2="2" y2="3"></line>
+        <line x1="19" y1="6" x2="22" y2="3"></line>
+        <line x1="3" y1="3" x2="21" y2="21" class="notif-slash ${!fullscreenTimerEnabled ? 'visible' : ''}"></line>
+    </svg>`;
 
     container.innerHTML = `
         <div class="view-header" style="justify-content: center;">
@@ -73,6 +82,15 @@ function renderSettings(fromHistory = false) {
                      ${weightIconHtml}
                 </div>
             </div>
+            <div class="routine-card" id="setting-fullscreen-timer-card">
+                <div>
+                    <h3>Timer a Schermo Intero</h3>
+                    <small id="fullscreen-timer-status">${fullscreenTimerEnabled ? 'Abilitato' : 'Disabilitato'}</small>
+                </div>
+                <div style="display:flex; align-items:center;">
+                     <button id="btn-fullscreen-timer-toggle" class="action-btn">${alarmIcon}</button>
+                </div>
+            </div>
             <div class="routine-card" style="cursor: default;">
                 <div>
                     <h3>Backup</h3>
@@ -86,7 +104,7 @@ function renderSettings(fromHistory = false) {
         </div>
         <input type="file" id="import-file-input" accept=".json" style="display: none;">
         <div style="text-align: center; margin-top: 20px; color: var(--text-muted); font-size: 0.8rem; padding-bottom: 20px;">
-            OnePercent v1.14
+            OnePercent v1.15
         </div>
     `;
 
@@ -185,6 +203,24 @@ function renderSettings(fromHistory = false) {
         }, 150);
     });
 
+    document.getElementById('setting-fullscreen-timer-card').addEventListener('click', () => {
+        const btn = document.getElementById('btn-fullscreen-timer-toggle');
+        const status = document.getElementById('fullscreen-timer-status');
+
+        const currentState = localStorage.getItem('fullscreen_timer_enabled') === 'true';
+        const newState = !currentState;
+
+        localStorage.setItem('fullscreen_timer_enabled', String(newState));
+
+        status.textContent = newState ? 'Abilitato' : 'Disabilitato';
+        
+        const slash = btn.querySelector('.notif-slash');
+        if (slash) slash.classList.toggle('visible', !newState);
+
+        btn.classList.add('click-animating');
+        setTimeout(() => btn.classList.remove('click-animating'), 200);
+    });
+
     // Export Logic
     document.getElementById('btn-backup-export').addEventListener('click', (e) => {
         e.stopPropagation();
@@ -201,7 +237,7 @@ function renderSettings(fromHistory = false) {
             const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backup, null, 2));
             const downloadAnchorNode = document.createElement('a');
             downloadAnchorNode.setAttribute("href", dataStr);
-            downloadAnchorNode.setAttribute("download", "onepercent_backup_" + new Date().toISOString().split('T')[0] + ".json");
+            downloadAnchorNode.setAttribute("download", "onepercent_backup.json");
             document.body.appendChild(downloadAnchorNode);
             downloadAnchorNode.click();
             downloadAnchorNode.remove();

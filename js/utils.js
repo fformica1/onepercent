@@ -8,20 +8,34 @@ const Views = {
     planDetail: document.getElementById('view-plan-detail'),
     createRoutine: document.getElementById('view-create-routine'),
     routineEditor: document.getElementById('view-routine-editor'),
-    exerciseSelector: document.getElementById('view-exercise-selector')
+    exerciseSelector: document.getElementById('view-exercise-selector'),
+    restTimer: document.getElementById('view-rest-timer')
 };
 
 function switchView(viewName) {
-    // Imposta l'attributo sul body per gestire lo stile globale via CSS
+    // Caso speciale per il timer a schermo intero, che agisce come un overlay.
+    // Mostra la vista del timer senza nascondere la vista sottostante (workout).
+    if (viewName === 'restTimer') {
+        // Non imposta 'data-view' per non alterare lo stato della vista sottostante (es. far riapparire l'header globale).
+        const target = Views.restTimer;
+        if (target) {
+            target.classList.remove('hidden');
+            target.classList.add('active');
+        }
+        AppState.currentView = viewName;
+        return; // Esce per non eseguire la logica standard di nascondere le altre viste.
+    }
+
+    // Comportamento standard per le viste principali
     document.body.setAttribute('data-view', viewName);
 
-    // Nascondi tutte
+    // Comportamento standard: nasconde tutte le viste...
     Object.values(Views).forEach(el => {
         if(el) el.classList.remove('active');
         if(el) el.classList.add('hidden');
     });
     
-    // Mostra richiesta
+    // ...e poi mostra solo quella richiesta.
     const target = Views[viewName];
     if (target) {
         target.classList.remove('hidden');
@@ -174,4 +188,11 @@ function closeModal(modalId) {
         modal.classList.add('hidden');
         document.body.classList.remove('no-scroll');
     }, 300); // Deve corrispondere alla durata della transizione CSS
+}
+
+// --- HELPERS ---
+function formatRestTime(seconds) {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
 }
