@@ -149,3 +149,7 @@
 .editor-grid-layout {
     grid-template-columns: 50px 1fr 1fr !important;
 }
+
+.workout-sets-header.editor-grid-layout {
+    padding: 0 5px;
+}

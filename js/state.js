@@ -4,13 +4,18 @@ function getDefaultExercises() {
         // Petto
         { name: "Panca Piana", group: "Petto" },
         { name: "Panca Inclinata", group: "Petto" },
-        { name: "Spinte Panca Piana", group: "Petto" },
-        { name: "Spinte Panca Inclinata", group: "Petto" },
+        { name: "Panca Piana con Manubri", group: "Petto" },
+        { name: "Panca Inclinata con Manubri", group: "Petto" },
         { name: "Panca Piana Multipower", group: "Petto" },
         { name: "Panca Inclinata Multipower", group: "Petto" },
         { name: "Chest Press", group: "Petto" },
+        { name: "Chest Press presa Stretta", group: "Petto" },
+        { name: "Incline Chest Press", group: "Petto" },
+        { name: "Croci su Panca Piana", group: "Petto" },
+        { name: "Croci su Panca Inclinata", group: "Petto" },
         { name: "Croci ai Cavi", group: "Petto" },
         { name: "Pec Fly", group: "Petto" },
+        { name: "Dip alle Parallele", group: "Petto" },
         // Dorso
         { name: "Deadlift", group: "Dorso" },
         { name: "Lat Machine", group: "Dorso" },
@@ -20,6 +25,10 @@ function getDefaultExercises() {
         { name: "Rematore con Manubri", group: "Dorso" },
         { name: "Rematore con Bilanciere", group: "Dorso" },
         { name: "T Bar", group: "Dorso" },
+        { name: "Rematore al Cavo", group: "Dorso" },
+        { name: "Pull Up", group: "Dorso" },
+        { name: "Chin Up", group: "Dorso" },
+        { name: "Iperestensioni", group: "Dorso" },
         // Spalle
         { name: "Military Press", group: "Spalle" },
         { name: "Lento Avanti con Manubri", group: "Spalle" },
@@ -27,34 +36,67 @@ function getDefaultExercises() {
         { name: "Alzate Frontali", group: "Spalle" },
         { name: "Alzate Laterali ai Cavi", group: "Spalle" },
         { name: "Shoulder Press", group: "Spalle" },
+        { name: "Arnold Press", group: "Spalle" },
+        // Deltoidi Posteriori
+        { name: "Reverse Pec Deck", group: "Deltoidi Posteriori" },
+        { name: "Alzate Posteriori con Manubri", group: "Deltoidi Posteriori" },
+        { name: "Face Pull", group: "Deltoidi Posteriori" },
+        // Trapezio
+        { name: "Scrollate con Manubri", group: "Trapezio" },
+        { name: "Scrollate con Bilanciere", group: "Trapezio" },
         // Quadricipiti
         { name: "Squat", group: "Quadricipiti" },
         { name: "Leg Press", group: "Quadricipiti" },
         { name: "Squat al Multipower", group: "Quadricipiti" },
         { name: "Leg Extention", group: "Quadricipiti" },
-        { name: "Affondi", group: "Quadricipiti" },
+        { name: "Affondi bulgari", group: "Quadricipiti" },
+        { name: "Affondi con Manubri", group: "Quadricipiti" },
+        { name: "Hack Squat", group: "Quadricipiti" },
         // Femorali
         { name: "Leg Curl", group: "Femorali" },
         { name: "Stacchi Rumeni", group: "Femorali" },
+        { name: "Good Morning", group: "Femorali" },
         // Bicipiti
         { name: "Curl con Manubri", group: "Bicipiti" },
         { name: "Curl Hammer", group: "Bicipiti" },
         { name: "Curl al Cavo", group: "Bicipiti" },
         { name: "Curl al Cavo con Corda", group: "Bicipiti" },
-        { name: "Curl EZ", group: "Bicipiti" },
+        { name: "Curl con Bilanciere EZ", group: "Bicipiti" },
+        { name: "Curl con Bilanciere", group: "Bicipiti" },
         // Tricipiti
         { name: "Push Down", group: "Tricipiti" },
         { name: "Push Down con Corda", group: "Tricipiti" },
         { name: "Overhead Extention", group: "Tricipiti" },
+        { name: "Overhead Extention con Manubri", group: "Tricipiti" },
         { name: "Kick Back", group: "Tricipiti" },
+        { name: "French Press con Bilanciere", group: "Tricipiti" },
+        { name: "French Press con Manubri", group: "Tricipiti" },
         // Glutei
         { name: "Hip Trust", group: "Glutei" },
+        { name: "Glute Kickback ai Cavi", group: "Glutei" },
+        { name: "Abduzioni ai Cavi", group: "Glutei" },
+        { name: "Abduzioni alla Macchina", group: "Glutei" },
         // Addome
         { name: "Plank", group: "Addome" },
         { name: "Crunch", group: "Addome" },
+        { name: "Leg Raise", group: "Addome" },
+        { name: "Russian Twist", group: "Addome" },
+        { name: "Sit Up", group: "Addome" },
+        { name: "Mountain Climber", group: "Addome" },
         // Polpacci
         { name: "Polpacci", group: "Polpacci" },
-        { name: "Calf Machine", group: "Polpacci" }
+        { name: "Calf Machine", group: "Polpacci" },
+        { name: "Calf Seduto", group: "Polpacci" },
+        { name: "Calf alla Pressa", group: "Polpacci" },
+        // Cardio
+        { name: "Tapis Roulant", group: "Cardio" },
+        { name: "Cyclette", group: "Cardio" },
+        { name: "Ellittica", group: "Cardio" },
+        { name: "Vogatore", group: "Cardio" },
+        { name: "Salto con la Corda", group: "Cardio" },
+        // Avambracci
+        { name: "Wrist Curl", group: "Avambracci" },
+        { name: "Reverse Curl", group: "Avambracci" }
     ];
 
     // Ordina per Gruppo Muscolare, poi per Nome
@@ -79,11 +121,13 @@ function getDefaultPlans(allExercises) {
     // Helper per creare un'istanza di esercizio per la routine
     const findEx = (name, sets, reps, rest) => {
         const template = allExercises.find(e => e.name === name);
-        if (!template) return null;
+        const exName = template ? template.name : name;
+        const exGroup = template ? template.muscleGroup : 'Altro';
+
         return {
             id: baseId + (idCounter++),
-            name: template.name,
-            muscleGroup: template.muscleGroup,
+            name: exName,
+            muscleGroup: exGroup,
             sets: sets,
             reps: String(reps),
             rest: rest,
@@ -93,47 +137,43 @@ function getDefaultPlans(allExercises) {
         };
     };
 
-    const sessionA = [
-        findEx("Squat", 3, 6, 120),
-        findEx("Panca Piana", 3, 6, 120),
-        findEx("Rematore con Bilanciere", 3, 8, 120),
-        findEx("Leg Curl", 3, 10, 90),
-        findEx("Alzate Laterali ai Cavi", 3, 10, 90),
-        findEx("Curl con Manubri", 3, 10, 90),
-        findEx("Push Down", 3, 10, 90)
-    ].filter(e => e);
-
-    const sessionB = [
-        findEx("Stacchi Rumeni", 3, 6, 120),
-        findEx("Military Press", 3, 6, 120),
-        findEx("Lat Machine", 3, 8, 120),
-        findEx("Leg Extention", 3, 10, 90),
-        findEx("Spinte Panca Inclinata", 3, 10, 90),
-        findEx("Push Down con Corda", 3, 10, 90),
-        findEx("Curl al Cavo con Corda", 3, 10, 90)
-    ].filter(e => e);
-
-    const sessionC = [
-        findEx("Leg Press", 3, 6, 120),
-        findEx("Pulley", 3, 8, 90),
-        findEx("Chest Press", 3, 10, 90),
-        findEx("Hip Trust", 3, 10, 90),
-        findEx("Shoulder Press", 3, 10, 90),
-        findEx("Curl Hammer", 3, 10, 90),
-        findEx("Overhead Extention", 3, 10, 90)
-    ].filter(e => e);
-
-    return [
-        {
-            id: baseId,
-            name: "Full Body",
-            routines: [
-                { id: baseId + 1, name: "Sessione A", exercises: sessionA },
-                { id: baseId + 2, name: "Sessione B", exercises: sessionB },
-                { id: baseId + 3, name: "Sessione C", exercises: sessionC }
-            ]
-        }
+    const pushSession = [
+        findEx("Panca Piana", 4, 6, 180),
+        findEx("Military Press", 3, 6, 150),
+        findEx("Panca Inclinata Manubri", 3, 10, 90), // Panca Inclinata Manubri
+        findEx("Alzate Laterali", 3, 10, 60),
+        findEx("Dip alle Parallele", 3, 10, 90),
+        findEx("Push Down con Corda", 3, 10, 60)
     ];
+
+    const pullSession = [
+        findEx("Deadlift", 3, 6, 180),
+        findEx("Pull Up", 4, 6, 150),
+        findEx("Rematore con Bilanciere", 3, 10, 90),
+        findEx("Lat Machine", 3, 10, 90),
+        findEx("Face Pull", 3, 10, 60),
+        findEx("Curl con Bilanciere EZ", 3, 10, 90)
+    ];
+
+    const legsSession = [
+        findEx("Squat", 4, 6, 180),
+        findEx("Leg Press", 3, 6, 150),
+        findEx("Stacchi Rumeni", 3, 10, 90),
+        findEx("Affondi con Manubri", 3, 10, 90),
+        findEx("Leg Extention", 3, 10, 60),
+        findEx("Leg Curl", 3, 10, 60)
+    ];
+
+    return [{
+        id: baseId,
+        name: "Push Pull Legs",
+        description: "Programma base su 3 giorni",
+        routines: [
+            { id: baseId + 1, name: "Push (Spinta)", exercises: pushSession },
+            { id: baseId + 2, name: "Pull (Tirata)", exercises: pullSession },
+            { id: baseId + 3, name: "Legs (Gambe)", exercises: legsSession }
+        ]
+    }];
 }
 
 // --- INIZIALIZZAZIONE DATI ---
@@ -141,7 +181,7 @@ let exercises = JSON.parse(localStorage.getItem('gym_exercises'));
 if (!exercises) {
     exercises = getDefaultExercises();
 } else if (exercises.length > 0 && typeof exercises[0] === 'string') {
-    // Migrazione immediata (String -> Object) per supportare getDefaultPlans
+    // Migrazione da vecchio formato (array di stringhe) a nuovo (array di oggetti)
     exercises = exercises.map((name, index) => ({
         id: Date.now() + index,
         name: name,
@@ -154,15 +194,30 @@ if (!plans || plans.length === 0) {
     plans = getDefaultPlans(exercises);
 }
 
+let archivedPlans = JSON.parse(localStorage.getItem('gym_archived_plans'));
+if (!archivedPlans) {
+    archivedPlans = [];
+}
+
 let activePlanId = JSON.parse(localStorage.getItem('gym_activePlanId'));
-if (!activePlanId && plans.length > 0) {
-    activePlanId = plans[0].id;
+
+// Se c'è almeno un piano ma nessun piano attivo (o ID non valido), seleziona il primo
+if (plans.length > 0) {
+    const isActiveValid = plans.some(p => p.id === activePlanId);
+    if (!activePlanId || !isActiveValid) {
+        activePlanId = plans[0].id;
+        localStorage.setItem('gym_activePlanId', JSON.stringify(activePlanId));
+    }
+} else if (activePlanId) {
+    activePlanId = null;
+    localStorage.removeItem('gym_activePlanId');
 }
 
 // --- STATO DELL'APP ---
 const AppState = {
     plans: plans,
     exercises: exercises,
+    archivedPlans: archivedPlans,
     activePlanId: activePlanId,
     theme: localStorage.getItem('gym_theme') || 'gray',
     currentView: 'home'
@@ -172,6 +227,7 @@ const AppState = {
 function saveAppData() {
     localStorage.setItem('gym_plans', JSON.stringify(AppState.plans));
     localStorage.setItem('gym_exercises', JSON.stringify(AppState.exercises));
+    localStorage.setItem('gym_archived_plans', JSON.stringify(AppState.archivedPlans));
     localStorage.setItem('gym_activePlanId', JSON.stringify(AppState.activePlanId));
     localStorage.setItem('gym_theme', AppState.theme);
 }

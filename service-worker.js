@@ -1,4 +1,4 @@
-const CACHE_NAME = 'one-percent-v70';
+const CACHE_NAME = 'one-percent-v71';
 const ASSETS_TO_CACHE = [
     './',
     './index.html',

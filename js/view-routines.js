@@ -40,7 +40,7 @@ function renderExerciseSelector(onConfirm, onCancel, fromHistory = false) {
     document.getElementById('btn-settings').classList.remove('visible');
     const container = Views.exerciseSelector;
     let selectedExercises = [];
-    const MUSCLE_GROUPS = ['Tutti', 'Addome', 'Bicipiti', 'Dorso', 'Femorali', 'Glutei', 'Petto', 'Polpacci', 'Quadricipiti', 'Spalle', 'Tricipiti', 'Altro'];
+    const MUSCLE_GROUPS = ['Tutti', 'Addome', 'Avambracci', 'Bicipiti', 'Cardio', 'Deltoidi Posteriori', 'Dorso', 'Femorali', 'Glutei', 'Petto', 'Polpacci', 'Quadricipiti', 'Spalle', 'Trapezio', 'Tricipiti', 'Altro'];
     let currentFilter = 'Tutti';
     let currentSearch = '';
 
@@ -443,7 +443,11 @@ function renderRoutineEditor(routineId, planId, fromHistory = false) {
                 <div id="edit-exercises-container">
                     ${routine.exercises && routine.exercises.length > 0 
                         ? routine.exercises.map(ex => renderExerciseEditorHTML(ex)).join('') 
-                        : '<p class="empty-state">Nessun esercizio in questa routine.</p>'}
+                        : `
+                            <div style="text-align: center; padding-top: 40px;">
+                                <p style="color: var(--text-muted);">Nessun Esercizio in questa Routine.</p>
+                            </div>
+                        `}
                 </div>
             </div>
         </div>
@@ -618,11 +622,45 @@ function renderRoutineEditor(routineId, planId, fromHistory = false) {
     // Handler per il FAB
     const fabHandler = () => {
         renderExerciseSelector((selectedNames) => {
-            const emptyState = exercisesContainer.querySelector('.empty-state');
-            if (emptyState) emptyState.remove();
+            // Se ci sono 0 card di esercizi, pulisci il container (per rimuovere il messaggio di stato vuoto)
+            if (exercisesContainer.querySelectorAll('.exercise-editor-card').length === 0) {
+                exercisesContainer.innerHTML = '';
+            }
 
             selectedNames.forEach(name => {
-                const newExercise = { id: Date.now() + Math.random(), name: name, sets: 1, reps: '', rest: '', weight: '', notes: '', series: [] };
+                const newExercise = { id: Date.now() + Math.random(), name: name, sets: 3, reps: '8-12', rest: '90', weight: '', notes: '', series: [] };
+
+                // Cerca l'ultima performance per questo esercizio per copiare i dati "prev"
+                let lastPerformedSeries = null;
+                let lastTimestamp = 0;
+
+                const allPlans = [...(AppState.plans || []), ...(AppState.archivedPlans || [])];
+                allPlans.forEach(plan => {
+                    if (plan.routines) {
+                        plan.routines.forEach(routine => {
+                            if (routine.lastPerformed && routine.lastPerformed > lastTimestamp) {
+                                if (routine.exercises) {
+                                    const oldEx = routine.exercises.find(ex => ex.name === name);
+                                    if (oldEx && oldEx.series && oldEx.series.some(s => s.prevWeight || s.prevReps)) {
+                                        lastTimestamp = routine.lastPerformed;
+                                        lastPerformedSeries = oldEx.series;
+                                    }
+                                }
+                            }
+                        });
+                    }
+                });
+
+                if (lastPerformedSeries) {
+                    newExercise.series = lastPerformedSeries.map(s => ({
+                        weight: s.weight || '', // Copia anche i target
+                        reps: s.reps || '',
+                        prevWeight: s.prevWeight || '',
+                        prevReps: s.prevReps || ''
+                    }));
+                    newExercise.sets = newExercise.series.length;
+                }
+
                 const div = document.createElement('div');
                 div.innerHTML = renderExerciseEditorHTML(newExercise);
                 const newCard = div.firstElementChild;
@@ -664,7 +702,11 @@ function renderRoutineEditor(routineId, planId, fromHistory = false) {
                 () => {
                     card.remove();
                     if (exercisesContainer.querySelectorAll('.exercise-editor-card').length === 0) {
-                        exercisesContainer.innerHTML = '<p class="empty-state">Nessun esercizio in questa routine.</p>';
+                        exercisesContainer.innerHTML = `
+                            <div style="text-align: center; padding-top: 40px;">
+                                <p style="color: var(--text-muted);">Nessun Esercizio in questa Routine.</p>
+                            </div>
+                        `;
                     }
                     saveRoutineChanges();
                 }

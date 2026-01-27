@@ -10,8 +10,10 @@ function renderCalendar() {
     // Mappa dati allenamenti per data: 'YYYY-MM-DD' -> Array di sessioni
     const historyMap = {};
 
-    if (AppState.plans) {
-        AppState.plans.forEach(plan => {
+    const allPlans = [...(AppState.plans || []), ...(AppState.archivedPlans || [])];
+
+    if (allPlans) {
+        allPlans.forEach(plan => {
             if (plan.routines) {
                 plan.routines.forEach(routine => {
                     // Raccogli tutte le date in cui questa routine o i suoi esercizi sono stati eseguiti
@@ -263,7 +265,11 @@ function renderCalendar() {
                     "Elimina Allenamento",
                     "Sei sicuro di voler eliminare questo allenamento dallo storico? L'azione è irreversibile.",
                     () => {
-                        const plan = AppState.plans.find(p => p.id === planId);
+                        let plan = AppState.plans.find(p => p.id === planId);
+                        if (!plan && AppState.archivedPlans) {
+                            plan = AppState.archivedPlans.find(p => p.id === planId);
+                        }
+
                         if (plan) {
                             const routine = plan.routines.find(r => r.id === routineId);
                             if (routine) {

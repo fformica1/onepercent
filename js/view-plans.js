@@ -1,5 +1,5 @@
 // --- MODALE DI CONFERMA GLOBALE ---
-function showConfirmationModal(title, message, onConfirm) {
+function showConfirmationModal(title, message, onConfirm, confirmText = "Elimina") {
     const modal = document.getElementById('confirm-modal');
     if (!modal) return;
 
@@ -11,8 +11,12 @@ function showConfirmationModal(title, message, onConfirm) {
 
     // Reset stato pulsanti (in caso sia stato usato showAlertModal)
     cancelBtn.classList.remove('hidden');
-    confirmBtn.textContent = "Elimina";
-    confirmBtn.classList.add('danger-btn');
+    confirmBtn.textContent = confirmText;
+    if (confirmText === "Elimina") {
+        confirmBtn.classList.add('danger-btn');
+    } else {
+        confirmBtn.classList.remove('danger-btn');
+    }
 
     const newConfirmBtn = confirmBtn.cloneNode(true);
     confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
@@ -154,7 +158,7 @@ function renderPlanDetail(plan, fromHistory = false) {
 
                 // Impedisci eliminazione se l'allenamento è in corso
                 if (currentWorkoutSession && currentWorkoutSession.routineId === routineId) {
-                    showAlertModal("Azione Negata", "Impossibile eliminare la routine: l'allenamento è in corso.");
+                    showAlertModal("Azione Negata", "Impossibile eliminare la Routine: l'allenamento è in corso.");
                 } else {
                     showConfirmationModal(
                         "Elimina Routine",
@@ -171,7 +175,11 @@ function renderPlanDetail(plan, fromHistory = false) {
             routineListContainer.appendChild(card);
         });
     } else {
-        routineListContainer.innerHTML = '<p class="empty-state">Nessuna routine in questo piano.</p>';
+        routineListContainer.innerHTML = `
+            <div style="text-align: center; padding-top: 40px;">
+                <p style="color: var(--text-muted);">Nessuna Routine in questo Piano.</p>
+            </div>
+        `;
     }
 
     // Drag and Drop Logic for Routines
@@ -392,7 +400,11 @@ function renderPlans(fromHistory = false) {
     const listContainer = document.getElementById('plans-list-container');
     
     if (AppState.plans.length === 0) {
-        listContainer.innerHTML = '<p class="empty-state">Nessun piano creato. Inizia creandone uno nuovo.</p>';
+        listContainer.innerHTML = `
+            <div style="text-align: center; padding-top: 40px;">
+                <p style="color: var(--text-muted);">Nessun Piano di Allenamento disponibile.</p>
+            </div>
+        `;
     } else {
         listContainer.innerHTML = '';
         AppState.plans.forEach(plan => {
@@ -441,20 +453,34 @@ function renderPlans(fromHistory = false) {
 
             // Impedisci eliminazione se l'allenamento è in corso in questo piano
             if (currentWorkoutSession && currentWorkoutSession.planId === id) {
-                showAlertModal("Azione Negata", "Impossibile eliminare il piano: un allenamento è in corso.");
+                showAlertModal("Azione Negata", "Impossibile eliminare il Piano: un allenamento è in corso.");
             } else {
                 const plan = AppState.plans.find(p => p.id === id);
                 if (!plan) return;
 
                 showConfirmationModal(
                     "Elimina Piano",
-                    `Sei sicuro di voler eliminare il piano "${plan.name}" e tutte le sue routine? L'azione è irreversibile.`,
+                    `Sei sicuro di voler Eliminare il Piano "${plan.name}"? Questa azione è irreversibile.`,
                     () => {
-                        AppState.plans = AppState.plans.filter(p => p.id !== id);
-                        if (AppState.activePlanId === id) AppState.activePlanId = null;
-                        saveAppData();
-                        renderPlans();
-                    }
+                        const planIdToArchive = id;
+                        const planIndex = AppState.plans.findIndex(p => p.id === planIdToArchive);
+
+                        if (planIndex > -1) {
+                            const [planToArchive] = AppState.plans.splice(planIndex, 1);
+                            if (!AppState.archivedPlans) AppState.archivedPlans = [];
+                            AppState.archivedPlans.push(planToArchive);
+
+                            if (AppState.activePlanId === planIdToArchive) {
+                                AppState.activePlanId = null;
+                                // Se ci sono altri piani, seleziona il primo disponibile
+                                if (AppState.plans.length > 0) {
+                                    AppState.activePlanId = AppState.plans[0].id;
+                                }
+                            }
+                            saveAppData();
+                            renderPlans();
+                        }
+                    }, "Elimina"
                 );
             }
             return;
@@ -527,6 +553,10 @@ function renderPlans(fromHistory = false) {
         if (name) {
             const newPlan = { id: Date.now(), name: name, description: '', routines: [] };
             AppState.plans.push(newPlan);
+            // Se è l'unico piano (o non ce n'era uno attivo), selezionalo automaticamente
+            if (AppState.plans.length === 1 || !AppState.activePlanId) {
+                AppState.activePlanId = newPlan.id;
+            }
             saveAppData();
             closeModal('create-plan-modal');
             renderPlans();

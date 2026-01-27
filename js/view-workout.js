@@ -115,6 +115,7 @@ let workoutAudioCtx = null;
 let wakeLock = null;
 let restEndTime = 0;
 let _cardToScrollToAfterRest = null;
+let keepAliveOscillator = null;
 
 try {
     const savedSession = localStorage.getItem('active_workout_session');
@@ -320,6 +321,37 @@ function playTimerFinishedSound() {
 
     playBeep(now);
     playBeep(now + 0.15); // Secondo beep ravvicinato
+}
+
+function enableKeepAlive() {
+    if (!workoutAudioCtx) {
+        workoutAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    if (workoutAudioCtx.state === 'suspended') {
+        workoutAudioCtx.resume().catch(() => {});
+    }
+
+    if (!keepAliveOscillator) {
+        try {
+            keepAliveOscillator = workoutAudioCtx.createOscillator();
+            const gain = workoutAudioCtx.createGain();
+            
+            keepAliveOscillator.type = 'sine';
+            keepAliveOscillator.frequency.setValueAtTime(20, workoutAudioCtx.currentTime); 
+            gain.gain.setValueAtTime(0.001, workoutAudioCtx.currentTime); 
+            
+            keepAliveOscillator.connect(gain);
+            gain.connect(workoutAudioCtx.destination);
+            keepAliveOscillator.start();
+        } catch (e) { console.error(e); }
+    }
+}
+
+function disableKeepAlive() {
+    if (keepAliveOscillator) {
+        try { keepAliveOscillator.stop(); keepAliveOscillator.disconnect(); } catch(e) {}
+        keepAliveOscillator = null;
+    }
 }
 
 function startRestTimer(seconds, nextCardToFocus = null, showFullscreen = true) {
@@ -531,6 +563,7 @@ function renderWorkout(routineId, planId, fromHistory = false) {
     // Se NON stiamo riprendendo la stessa sessione E NON siamo in sola lettura (quindi nuovo allenamento legittimo)
     if (!isResuming && !isReadOnly) {
         if (timerWorker) timerWorker.postMessage('stop');
+        disableKeepAlive();
         currentRestSeconds = 0;
         currentWorkoutSession = null;
         localStorage.removeItem('active_workout_session');
@@ -732,6 +765,7 @@ function renderWorkout(routineId, planId, fromHistory = false) {
         startWorkoutTimerUI(currentWorkoutSession.startTime);
         updateRestDisplay();
         activateWakeLock();
+        enableKeepAlive();
         
         // Ripristina timer recupero se attivo
         if (currentWorkoutSession.restEndTime) {
@@ -775,6 +809,7 @@ function renderWorkout(routineId, planId, fromHistory = false) {
 
         startWorkoutTimerUI(currentWorkoutSession.startTime);
         activateWakeLock();
+        enableKeepAlive();
         updateSystemNotification();
     };
 
@@ -1087,6 +1122,7 @@ function renderWorkout(routineId, planId, fromHistory = false) {
             }
             currentWorkoutSession = null;
             localStorage.removeItem('active_workout_session');
+            disableKeepAlive();
         }
 
         history.back();
@@ -1112,6 +1148,7 @@ function renderWorkout(routineId, planId, fromHistory = false) {
 
     document.getElementById('btn-save-workout').onclick = () => {
         deactivateWakeLock();
+        disableKeepAlive();
         if (typeof SystemNotifier !== 'undefined') SystemNotifier.clearWorkoutNotification();
         // Chiudi la modale
         closeModal('end-workout-modal');
@@ -1175,6 +1212,7 @@ function renderWorkout(routineId, planId, fromHistory = false) {
 
     document.getElementById('btn-discard-workout').onclick = () => {
         deactivateWakeLock();
+        disableKeepAlive();
         if (typeof SystemNotifier !== 'undefined') SystemNotifier.clearWorkoutNotification();
         // Chiudi la modale
         closeModal('end-workout-modal');
