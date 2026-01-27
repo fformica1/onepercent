@@ -5,7 +5,7 @@ const Views = {
     plans: document.getElementById('view-plans'),
     settings: document.getElementById('view-settings'),
     createPlan: document.getElementById('view-create-plan'),
-    planDetail: document.getElementById('view-plan-detail'),
+    routines: document.getElementById('view-routines'),
     createRoutine: document.getElementById('view-create-routine'),
     routineEditor: document.getElementById('view-routine-editor'),
     exerciseSelector: document.getElementById('view-exercise-selector'),
@@ -195,4 +195,62 @@ function formatRestTime(seconds) {
     const m = Math.floor(seconds / 60);
     const s = seconds % 60;
     return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+}
+
+// --- MODALE DI CONFERMA GLOBALE ---
+function showConfirmationModal(title, message, onConfirm, confirmText = "Elimina") {
+    const modal = document.getElementById('confirm-modal');
+    if (!modal) return;
+
+    modal.querySelector('#confirm-modal-title').textContent = title;
+    modal.querySelector('#confirm-modal-text').textContent = message;
+
+    const confirmBtn = modal.querySelector('#confirm-modal-confirm');
+    const cancelBtn = modal.querySelector('#confirm-modal-cancel');
+
+    // Reset stato pulsanti (in caso sia stato usato showAlertModal)
+    cancelBtn.classList.remove('hidden');
+    confirmBtn.textContent = confirmText;
+    if (confirmText === "Elimina") {
+        confirmBtn.classList.add('danger-btn');
+    } else {
+        confirmBtn.classList.remove('danger-btn');
+    }
+
+    const newConfirmBtn = confirmBtn.cloneNode(true);
+    confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
+    newConfirmBtn.addEventListener('click', () => {
+        onConfirm();
+        closeModal('confirm-modal');
+    });
+
+    const newCancelBtn = cancelBtn.cloneNode(true);
+    cancelBtn.parentNode.replaceChild(newCancelBtn, cancelBtn);
+    newCancelBtn.addEventListener('click', () => { closeModal('confirm-modal'); });
+    
+    openModal('confirm-modal');
+}
+
+// --- MODALE AVVISO GLOBALE ---
+function showAlertModal(title, message) {
+    const modal = document.getElementById('confirm-modal');
+    if (!modal) return;
+
+    modal.querySelector('#confirm-modal-title').textContent = title;
+    modal.querySelector('#confirm-modal-text').textContent = message;
+
+    const confirmBtn = modal.querySelector('#confirm-modal-confirm');
+    const cancelBtn = modal.querySelector('#confirm-modal-cancel');
+
+    // Configurazione per avviso (solo OK)
+    cancelBtn.classList.add('hidden');
+    
+    const newConfirmBtn = confirmBtn.cloneNode(true);
+    confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
+    
+    newConfirmBtn.textContent = "OK";
+    newConfirmBtn.classList.remove('danger-btn');
+    newConfirmBtn.addEventListener('click', () => { closeModal('confirm-modal'); });
+    
+    openModal('confirm-modal');
 }
