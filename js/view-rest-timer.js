@@ -1,7 +1,7 @@
 const RestTimerView = {
     show(initialSeconds, nextExerciseInfo) {
         // Controlla se l'opzione è abilitata
-        if (localStorage.getItem('fullscreen_timer_enabled') !== 'true') return;
+        if (localStorage.getItem('fullscreen_timer_enabled') === 'false') return;
 
         history.pushState({view: 'restTimer'}, 'Recupero', '#restTimer');
         

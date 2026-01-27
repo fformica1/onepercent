@@ -34,7 +34,7 @@ function renderSettings(fromHistory = false) {
     </svg>`;
 
     const weightIncrement = localStorage.getItem('weight_increment') || '2.5';
-    const fullscreenTimerEnabled = localStorage.getItem('fullscreen_timer_enabled') === 'true';
+    const fullscreenTimerEnabled = localStorage.getItem('fullscreen_timer_enabled') !== 'false';
     
     const weightIconHtml = `
         <div id="btn-weight-icon" style="width: 30px; height: 30px; position: relative; cursor: pointer;">
@@ -104,7 +104,7 @@ function renderSettings(fromHistory = false) {
         </div>
         <input type="file" id="import-file-input" accept=".json" style="display: none;">
         <div style="text-align: center; margin-top: 20px; color: var(--text-muted); font-size: 0.8rem; padding-bottom: 20px;">
-            OnePercent v1.16
+            OnePercent v1.17
         </div>
     `;
 
@@ -207,7 +207,7 @@ function renderSettings(fromHistory = false) {
         const btn = document.getElementById('btn-fullscreen-timer-toggle');
         const status = document.getElementById('fullscreen-timer-status');
 
-        const currentState = localStorage.getItem('fullscreen_timer_enabled') === 'true';
+        const currentState = localStorage.getItem('fullscreen_timer_enabled') !== 'false';
         const newState = !currentState;
 
         localStorage.setItem('fullscreen_timer_enabled', String(newState));
