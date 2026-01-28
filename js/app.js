@@ -32,7 +32,10 @@ if ('serviceWorker' in navigator) {
                 });
             });
         })
-        .catch(err => console.error('Errore Service Worker:', err));
+        .catch(err => {
+            console.error('Errore Service Worker:', err);
+            showAlertModal('Errore Critico', 'L\'app potrebbe non funzionare correttamente senza connessione.');
+        });
 
     // Ricarica la pagina quando un nuovo SW prende il controllo per applicare l'aggiornamento
     navigator.serviceWorker.addEventListener('controllerchange', () => {
