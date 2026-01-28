@@ -17,17 +17,25 @@ if ('serviceWorker' in navigator) {
                 );
             };
 
+            const showUpdatePrompt = (worker) => {
+                // Mostra la richiesta di aggiornamento solo nella home o nelle impostazioni
+                if (AppState.currentView === 'home' || AppState.currentView === 'settings') {
+                    askToUpdate(worker);
+                }
+            };
+
             // Controlla se c'è già un SW in attesa all'avvio
             if (reg.waiting) {
-                askToUpdate(reg.waiting);
+                showUpdatePrompt(reg.waiting);
             }
 
             // Ascolta per nuovi SW che entrano nello stato 'installed'
             reg.addEventListener('updatefound', () => {
                 const newWorker = reg.installing;
                 newWorker.addEventListener('statechange', () => {
+                    // Un nuovo SW è stato installato e sta aspettando di attivarsi
                     if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                        askToUpdate(newWorker);
+                        showUpdatePrompt(newWorker);
                     }
                 });
             });
