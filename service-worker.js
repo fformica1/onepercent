@@ -1,4 +1,4 @@
-const CACHE_NAME = 'one-percent-v73';
+const CACHE_NAME = 'one-percent-v74';
 const ASSETS_TO_CACHE = [
     './',
     './index.html',
@@ -8,6 +8,7 @@ const ASSETS_TO_CACHE = [
     './css/view-home.css',
     './css/view-plans.css',
     './css/view-routines.css',
+    './css/view-routine-editor.css',
     './css/view-workout.css',
     './css/view-exercises.css',
     './css/view-calendar.css',
@@ -38,7 +39,7 @@ const ASSETS_TO_CACHE = [
 
 // Installazione: cache delle risorse statiche
 self.addEventListener('install', (event) => {
-    self.skipWaiting(); // Forza l'attivazione immediata del nuovo SW
+    // Non forziamo più l'attivazione immediata. Il nuovo SW attenderà il comando dal client.
     event.waitUntil(
         caches.open(CACHE_NAME)
             .then((cache) => cache.addAll(ASSETS_TO_CACHE))
@@ -47,7 +48,18 @@ self.addEventListener('install', (event) => {
 
 // Attivazione: prende il controllo immediato della pagina
 self.addEventListener('activate', (event) => {
-    event.waitUntil(clients.claim());
+    const cacheWhitelist = [CACHE_NAME];
+    event.waitUntil(
+        caches.keys().then((cacheNames) => {
+            return Promise.all(
+                cacheNames.map((cacheName) => {
+                    if (cacheWhitelist.indexOf(cacheName) === -1) {
+                        return caches.delete(cacheName); // Rimuove le vecchie cache
+                    }
+                })
+            );
+        }).then(() => clients.claim()) // Prende il controllo dopo la pulizia
+    );
 });
 
 // Fetch: serve i file dalla cache se offline
@@ -56,6 +68,13 @@ self.addEventListener('fetch', (event) => {
         caches.match(event.request, {ignoreSearch: true})
             .then((response) => response || fetch(event.request))
     );
+});
+
+// Gestione Messaggi dal Client
+self.addEventListener('message', (event) => {
+    if (event.data && event.data.type === 'SKIP_WAITING') {
+        self.skipWaiting();
+    }
 });
 
 // Gestione Click Notifica

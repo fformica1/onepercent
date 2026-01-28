@@ -1,9 +1,43 @@
 // Registrazione Service Worker per PWA
 if ('serviceWorker' in navigator) {
-    // Registra il Service Worker (Gestisce cache e offline)
     navigator.serviceWorker.register('./service-worker.js')
-        .then(reg => console.log('Service Worker registrato:', reg.scope))
+        .then(reg => {
+            console.log('Service Worker registrato:', reg.scope);
+
+            // Funzione per chiedere all'utente di aggiornare
+            const askToUpdate = (worker) => {
+                showConfirmationModal(
+                    "Aggiornamento Disponibile",
+                    "Una nuova versione dell'app è pronta. Vuoi aggiornare ora?",
+                    () => {
+                        // Invia il messaggio al SW in attesa per attivarlo
+                        worker.postMessage({ type: 'SKIP_WAITING' });
+                    },
+                    "Aggiorna"
+                );
+            };
+
+            // Controlla se c'è già un SW in attesa all'avvio
+            if (reg.waiting) {
+                askToUpdate(reg.waiting);
+            }
+
+            // Ascolta per nuovi SW che entrano nello stato 'installed'
+            reg.addEventListener('updatefound', () => {
+                const newWorker = reg.installing;
+                newWorker.addEventListener('statechange', () => {
+                    if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                        askToUpdate(newWorker);
+                    }
+                });
+            });
+        })
         .catch(err => console.error('Errore Service Worker:', err));
+
+    // Ricarica la pagina quando un nuovo SW prende il controllo per applicare l'aggiornamento
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+        window.location.reload();
+    });
 }
 
 // --- INIZIALIZZAZIONE ---

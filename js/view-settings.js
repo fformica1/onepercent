@@ -1,5 +1,6 @@
 // --- RENDER IMPOSTAZIONI ---
 function renderSettings(fromHistory = false) {
+    window.scrollTo(0, 0);
     if (!fromHistory) {
         history.pushState({view: 'settings'}, 'Impostazioni', '#settings');
     }
@@ -13,6 +14,7 @@ function renderSettings(fromHistory = false) {
 
     const downloadIcon = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>';
     const uploadIcon = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>';
+    const updateIcon = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>';
 
     let themeLabel = 'Chiaro';
     let themeIcon = sunIcon;
@@ -101,10 +103,19 @@ function renderSettings(fromHistory = false) {
                      <button id="btn-backup-export" class="action-btn">${uploadIcon}</button>
                 </div>
             </div>
+            <div class="routine-card" id="setting-update-card">
+                <div>
+                    <h3>Aggiorna</h3>
+                    <small>Verifica aggiornamenti</small>
+                </div>
+                <div style="display:flex; align-items:center;">
+                     <button id="btn-check-update" class="action-btn">${updateIcon}</button>
+                </div>
+            </div>
         </div>
         <input type="file" id="import-file-input" accept=".json" style="display: none;">
         <div style="text-align: center; margin-top: 20px; color: var(--text-muted); font-size: 0.8rem; padding-bottom: 20px;">
-            OnePercent v1.17
+            OnePercent v1.18
         </div>
     `;
 
@@ -162,6 +173,7 @@ function renderSettings(fromHistory = false) {
             }
         } catch (e) {
             console.error("Errore toggle notifiche:", e);
+            showAlertModal("Errore", "Impossibile modificare le impostazioni delle notifiche.");
         } finally {
             delete notifCard.dataset.processing;
         }
@@ -243,6 +255,54 @@ function renderSettings(fromHistory = false) {
             downloadAnchorNode.remove();
             btn.classList.remove('click-animating');
         }, 200);
+    });
+
+    // Update Logic
+    document.getElementById('setting-update-card').addEventListener('click', () => {
+        const btn = document.getElementById('btn-check-update');
+        
+        // Anima l'icona (rotazione)
+        btn.style.transition = 'none';
+        btn.style.transform = 'rotate(0deg)';
+        void btn.offsetWidth; // Force reflow
+        btn.style.transition = 'transform 0.5s ease';
+        btn.style.transform = 'rotate(360deg)';
+        
+        setTimeout(() => {
+            btn.style.transition = '';
+            btn.style.transform = '';
+        }, 800);
+
+        if (!('serviceWorker' in navigator)) {
+            return showAlertModal("Errore", "Funzionalità non supportata dal browser.");
+        }
+
+        navigator.serviceWorker.getRegistration().then(reg => {
+            if (!reg) {
+                return showAlertModal("Errore", "Service Worker non trovato.");
+            }
+
+            // Prima controlla se c'è già un aggiornamento in attesa.
+            if (reg.waiting) {
+                showConfirmationModal(
+                    "Aggiornamento Disponibile",
+                    "Una nuova versione dell'app è pronta. Vuoi aggiornare ora?",
+                    () => {
+                        reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+                    },
+                    "Aggiorna"
+                );
+                return;
+            }
+
+            // Se non c'è un aggiornamento in attesa, avvia la verifica.
+            showAlertModal("Verifica Aggiornamenti", "Controllo avviato. Sarai avvisato se viene trovato un aggiornamento.");
+            reg.update().catch(error => {
+                // Questo catch si attiva solo se la connessione fallisce
+                console.error("Errore durante la verifica dell'aggiornamento:", error);
+                showAlertModal("Errore", "Impossibile verificare gli aggiornamenti. Controlla la connessione.");
+            });
+        });
     });
 
     // Import Logic

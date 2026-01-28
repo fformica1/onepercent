@@ -1,0 +1,101 @@
+.workout-card.exercise-editor-card {
+    background: var(--bg-card);
+    padding: 10px 15px;
+    border-radius: 16px;
+    margin-bottom: 10px;
+    border: 1px solid var(--border);
+    position: relative;
+    transition: transform 0.3s cubic-bezier(0.2, 0, 0, 1);
+}
+
+.editor-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 5px;
+    padding-left: 0;
+}
+
+.exercise-name-readonly {
+    font-weight: bold;
+    font-size: 1.1rem;
+    color: var(--text-main);
+}
+
+.workout-card.exercise-editor-card h3 {
+    font-size: 1.3rem;
+}
+
+/* Compact Dragging Mode */
+#edit-exercises-container.dragging-active .exercise-editor-card .workout-notes-input,
+#edit-exercises-container.dragging-active .exercise-editor-card .workout-rest-info,
+#edit-exercises-container.dragging-active .exercise-editor-card .editor-sets-table {
+    display: none;
+}
+
+.dragging-item-active {
+    box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+    transform: scale(1.05);
+}
+
+.dragging-placeholder {
+    opacity: 0;
+}
+
+.dragging-placeholder > * {
+    visibility: hidden;
+}
+
+.delete-exercise-btn {
+    background: none;
+    border: none;
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 5px;
+    color: var(--text-muted);
+}
+
+.editor-row {
+    margin-bottom: 2px;
+}
+
+.editor-sets-table {
+    margin-top: 5px;
+    border-top: none;
+    padding-top: 5px;
+}
+
+.editor-sets-header {
+    display: grid;
+    grid-template-columns: 40px 1fr 1fr;
+    gap: 10px;
+    text-align: center;
+    font-weight: bold;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-bottom: 2px;
+}
+
+.editor-set-row {
+    display: grid;
+    grid-template-columns: 40px 1fr 1fr;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 0;
+    height: 32px;
+}
+
+.editor-sets-actions {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 5px;
+}
+
+.editor-grid-layout {
+    grid-template-columns: 50px 1fr 1fr !important;
+}
+
+.workout-sets-header.editor-grid-layout {
+    padding: 0 5px;
+}

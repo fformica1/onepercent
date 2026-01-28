@@ -55,6 +55,7 @@ function renderExerciseEditorHTML(exercise) {
 }
 
 function renderRoutineEditor(routineId, planId, fromHistory = false) {
+    window.scrollTo(0, 0);
     document.querySelector('main').style.transform = '';
     document.querySelector('main').classList.remove('calendar-open');
 

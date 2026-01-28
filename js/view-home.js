@@ -2,6 +2,7 @@
 let homeDragHandlers = null;
 
 function renderHome(fromHistory = false) {
+    window.scrollTo(0, 0);
     // Reset transform se torniamo alla home
     document.querySelector('main').style.transform = '';
     document.querySelector('main').classList.remove('calendar-open');

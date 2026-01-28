@@ -1,5 +1,6 @@
 // --- RENDER VISTA ROUTINES (DETTAGLIO PIANO) ---
 function renderRoutines(plan, fromHistory = false) {
+    window.scrollTo(0, 0);
     document.body.classList.remove('no-scroll');
     document.querySelector('main').style.transform = '';
     document.querySelector('main').classList.remove('calendar-open');

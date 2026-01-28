@@ -554,7 +554,7 @@ function renderWorkout(routineId, planId, fromHistory = false) {
     }
 
     if (!routine) {
-        alert('Errore: Routine non trovata.');
+        showAlertModal('Errore', 'Routine non trovata.');
         renderHome();
         switchView('home');
         return;

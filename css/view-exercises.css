@@ -54,7 +54,7 @@
 
 .selector-item {
     background: var(--bg-card);
-    padding: 15px;
+    padding: 10px;
     border-radius: 16px;
     display: flex;
     align-items: center;
@@ -107,10 +107,11 @@
 }
 
 .exercise-name {
+    font-size: 0.9rem;
     font-weight: 500;
 }
 
 .exercise-group-name {
-    font-size: 0.8rem;
+    font-size: 0.7rem;
     color: var(--text-muted);
 }

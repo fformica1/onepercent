@@ -1,5 +1,6 @@
 // --- RENDER SELETTORE ESERCIZI ---
 function renderExerciseSelector(onConfirm, onCancel, fromHistory = false) {
+    window.scrollTo(0, 0);
     document.querySelector('main').style.transform = '';
     document.querySelector('main').classList.remove('calendar-open');
 
