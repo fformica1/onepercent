@@ -1,4 +1,4 @@
-const CACHE_NAME = 'one-percent-v76';
+const CACHE_NAME = 'one-percent-v77';
 const ASSETS_TO_CACHE = [
     './',
     './index.html',
@@ -62,11 +62,39 @@ self.addEventListener('activate', (event) => {
     );
 });
 
-// Fetch: serve i file dalla cache se offline
+// Fetch: Strategia Cache-First robusta con Timeout e Fallback
 self.addEventListener('fetch', (event) => {
+    // Funzione per il timeout della rete (evita che l'app si blocchi su connessioni "zombie")
+    const timeoutPromise = (ms) => {
+        return new Promise((_, reject) => {
+            setTimeout(() => reject(new Error('Network timeout')), ms);
+        });
+    };
+
     event.respondWith(
         caches.match(event.request, {ignoreSearch: true})
-            .then((response) => response || fetch(event.request))
+            .then((response) => {
+                // 1. Se è in cache, restituisci SUBITO (nessun accesso a internet)
+                if (response) {
+                    return response;
+                }
+
+                // 2. Se non è in cache, prova la rete ma con un timeout breve (3 secondi)
+                // Questo previene il blocco infinito
+                return Promise.race([
+                    fetch(event.request),
+                    timeoutPromise(3000)
+                ]).catch((err) => {
+                    // 3. Se la rete fallisce o va in timeout...
+                    
+                    // Se è una richiesta di navigazione (apertura app), restituisci sempre index.html
+                    if (event.request.mode === 'navigate') {
+                        return caches.match('./index.html');
+                    }
+                    // Altrimenti lancia errore (o potremmo restituire un placeholder)
+                    throw err;
+                });
+            })
     );
 });
 

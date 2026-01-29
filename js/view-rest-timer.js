@@ -1,5 +1,5 @@
 const RestTimerView = {
-    show(initialSeconds, nextExerciseInfo) {
+    show(initialSeconds, nextExerciseInfo, totalSeconds) {
         // Controlla se l'opzione è abilitata
         if (localStorage.getItem('fullscreen_timer_enabled') === 'false') return;
 
@@ -10,6 +10,8 @@ const RestTimerView = {
 
         const container = document.getElementById('view-rest-timer');
         if (!container) return;
+
+        const total = totalSeconds || initialSeconds;
 
         let nextExerciseContent;
         if (nextExerciseInfo.name) {
@@ -29,7 +31,7 @@ const RestTimerView = {
 
         container.innerHTML = `
             <button id="btn-back-rest-timer" class="rest-timer-fullscreen-back-btn">←</button>
-            <div id="fullscreen-timer-display" class="rest-timer-fullscreen-display">${formatRestTime(initialSeconds)}</div>
+            <div id="fullscreen-timer-display" class="rest-timer-fullscreen-display"><span class="rest-timer-current">${initialSeconds}</span><small class="rest-timer-total">/${total}s</small></div>
             
             <div class="rest-timer-fullscreen-controls">
                 <button id="btn-fs-rest-minus" class="rest-btn-fullscreen">-15</button>
@@ -55,10 +57,12 @@ const RestTimerView = {
         };
     },
 
-    update(seconds) {
+    update(seconds, totalSeconds) {
         const display = document.getElementById('fullscreen-timer-display');
         if (display) {
-            display.textContent = formatRestTime(seconds > 0 ? seconds : 0);
+            const current = seconds > 0 ? seconds : 0;
+            const total = totalSeconds > 0 ? totalSeconds : 0;
+            display.innerHTML = `<span class="rest-timer-current">${current}</span><small class="rest-timer-total">/${total}s</small>`;
         }
     },
 

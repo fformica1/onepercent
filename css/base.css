@@ -387,3 +387,16 @@ body.no-scroll {
     stroke-dashoffset: 0;
     opacity: 1;
 }
+
+/* Stile per il tempo totale nei timer di recupero */
+.rest-timer-total {
+    color: var(--text-main);
+    font-size: 0.3em;
+}
+
+.rest-timer-current {
+    display: inline-block;
+    min-width: 3ch;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+}

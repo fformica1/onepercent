@@ -35,20 +35,20 @@ const SystemNotifier = {
      * Shows or updates the workout notification.
      * @param {object} options
      * @param {string} options.workoutTime - e.g., "00:15"
-     * @param {string} options.restTime - e.g., "01:30" or null if not resting
+     * @param {number|null} options.currentRest - e.g., 85 or null
+     * @param {number|null} options.totalRest - e.g., 90 or null
      * @param {string} options.routineName - e.g., "Sessione A"
      * @param {string} options.nextExerciseName - e.g., "Panca Piana"
      * @param {string} options.setInfo - e.g., "1/3"
      * @param {string} options.targetInfo - e.g., "100kg x 8"
      */
-    updateWorkoutNotification({ workoutTime, restTime, routineName, nextExerciseName, setInfo, targetInfo }) {
+    updateWorkoutNotification({ workoutTime, currentRest, totalRest, routineName, nextExerciseName, setInfo, targetInfo }) {
         if (Notification.permission !== 'granted') {
             return;
         }
 
         if (this.isAndroid) {
-            // Android: La logica per la notifica persistente andrà qui
-            this.showAndroidPersistentNotification({ workoutTime, restTime, routineName, nextExerciseName, setInfo, targetInfo }); 
+            this.showAndroidPersistentNotification({ workoutTime, currentRest, totalRest, routineName, nextExerciseName, setInfo, targetInfo }); 
         }
     },
 
@@ -82,12 +82,19 @@ const SystemNotifier = {
         return './notification-icon.png';
     },
 
-    showAndroidPersistentNotification({ workoutTime, restTime, routineName, nextExerciseName, setInfo, targetInfo }) {
+    showAndroidPersistentNotification({ workoutTime, currentRest, totalRest, routineName, nextExerciseName, setInfo, targetInfo }) {
         if (!('serviceWorker' in navigator)) return;
 
         // Titolo: Se c'è recupero mostra il tempo, altrimenti il nome della routine
-        const title = restTime ? `Recupero: ${restTime}` : routineName;
-        
+        let title;
+        if (currentRest !== null && totalRest !== null && totalRest > 0) {
+            title = `Recupero: ${currentRest}/${totalRest}s`;
+        } else if (currentRest !== null) {
+            title = `Recupero: ${currentRest}s`;
+        } else {
+            title = routineName;
+        }
+
         // Body: ➜ 1/3 Panca Piana: 100kg x 8
         let body = 'Allenamento in corso';
         if (nextExerciseName) {

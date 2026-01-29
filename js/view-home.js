@@ -10,6 +10,7 @@ function renderHome(fromHistory = false) {
     const fab = document.getElementById('fab-action');
     if(fab) {
         fab.classList.remove('fab-hidden');
+        fab.classList.remove('keyboard-hidden');
         fab.style.transform = '';
     }
 

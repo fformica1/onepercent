@@ -2,7 +2,7 @@
 if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('./service-worker.js')
         .then(reg => {
-            console.log('Service Worker registrato:', reg.scope);
+            // console.log('Service Worker registrato:', reg.scope);
 
             // Funzione per chiedere all'utente di aggiornare
             const askToUpdate = (worker) => {
@@ -10,6 +10,8 @@ if ('serviceWorker' in navigator) {
                     "Aggiornamento Disponibile",
                     "Una nuova versione dell'app è pronta. Vuoi aggiornare ora?",
                     () => {
+                        // Reset timer mensile quando si accetta l'aggiornamento
+                        localStorage.setItem('last_update_check_timestamp', Date.now().toString());
                         // Invia il messaggio al SW in attesa per attivarlo
                         worker.postMessage({ type: 'SKIP_WAITING' });
                     },
@@ -24,9 +26,24 @@ if ('serviceWorker' in navigator) {
                 }
             };
 
-            // Controlla se c'è già un SW in attesa all'avvio
-            if (reg.waiting) {
-                showUpdatePrompt(reg.waiting);
+            // --- LOGICA AGGIORNAMENTO MENSILE ---
+            const lastCheck = localStorage.getItem('last_update_check_timestamp');
+            const now = Date.now();
+            const oneMonth = 30 * 24 * 60 * 60 * 1000; // 30 giorni in ms
+
+            // Controlliamo gli aggiornamenti SOLO se:
+            // 1. Non abbiamo mai controllato
+            // 2. È passato più di un mese
+            // 3. C'è già un worker in attesa (aggiornamento già scaricato in precedenza)
+            const shouldCheck = !lastCheck || (now - parseInt(lastCheck) > oneMonth);
+
+            if (shouldCheck) {
+                // Se c'è già un SW in attesa, mostra prompt
+                if (reg.waiting) {
+                    showUpdatePrompt(reg.waiting);
+                }
+                // Aggiorniamo il timestamp solo se effettivamente gestiamo un aggiornamento o se forziamo il check
+                // Nota: Il browser controlla comunque il file SW periodicamente, ma noi limitiamo l'interazione utente.
             }
 
             // Ascolta per nuovi SW che entrano nello stato 'installed'
@@ -34,7 +51,8 @@ if ('serviceWorker' in navigator) {
                 const newWorker = reg.installing;
                 newWorker.addEventListener('statechange', () => {
                     // Un nuovo SW è stato installato e sta aspettando di attivarsi
-                    if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                    // Mostriamo il prompt SOLO se rientriamo nella logica mensile (o se forzato manualmente altrove)
+                    if (shouldCheck && newWorker.state === 'installed' && navigator.serviceWorker.controller) {
                         showUpdatePrompt(newWorker);
                     }
                 });

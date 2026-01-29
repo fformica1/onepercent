@@ -115,7 +115,7 @@ function renderSettings(fromHistory = false) {
         </div>
         <input type="file" id="import-file-input" accept=".json" style="display: none;">
         <div style="text-align: center; margin-top: 20px; color: var(--text-muted); font-size: 0.8rem; padding-bottom: 20px;">
-            OnePercent v1.0
+            OnePercent v1.1
         </div>
     `;
 
@@ -281,6 +281,9 @@ function renderSettings(fromHistory = false) {
             if (!reg) {
                 return showAlertModal("Errore", "Service Worker non trovato.");
             }
+
+        // Aggiorna il timestamp dell'ultimo controllo (resetta il timer mensile)
+        localStorage.setItem('last_update_check_timestamp', Date.now().toString());
 
             // Prima controlla se c'è già un aggiornamento in attesa.
             if (reg.waiting) {
