@@ -11,7 +11,7 @@ function renderExerciseSelector(onConfirm, onCancel, fromHistory = false) {
     document.getElementById('btn-settings').classList.remove('visible');
     const container = Views.exerciseSelector;
     let selectedExercises = [];
-    const MUSCLE_GROUPS = ['Tutti', 'Addome', 'Avambracci', 'Bicipiti', 'Cardio', 'Deltoidi Posteriori', 'Dorso', 'Femorali', 'Glutei', 'Petto', 'Polpacci', 'Quadricipiti', 'Spalle', 'Trapezio', 'Tricipiti', 'Altro'];
+    const MUSCLE_GROUPS = ['Tutti', 'Addome', 'Avambracci', 'Bicipiti', 'Deltoidi Posteriori', 'Dorso', 'Femorali', 'Glutei', 'Petto', 'Polpacci', 'Quadricipiti', 'Spalle', 'Trapezio', 'Tricipiti', 'Altro'];
     let currentFilter = 'Tutti';
     let currentSearch = '';
 
@@ -164,7 +164,7 @@ function renderExerciseSelector(onConfirm, onCancel, fromHistory = false) {
 
             showConfirmationModal(
                 "Elimina Esercizio",
-                `Sei sicuro di voler eliminare "${exercise.name}" dal database? Verrà rimosso da tutte le routine.`,
+                `Sei sicuro di voler eliminare "${exercise.name}"? Verrà rimosso da tutte le routine.`,
                 () => {
                     AppState.exercises = AppState.exercises.filter(ex => ex.id !== id);
                     // Rimuove l'esercizio da tutte le routine in tutti i piani
@@ -221,7 +221,7 @@ function renderExerciseSelector(onConfirm, onCancel, fromHistory = false) {
             document.getElementById('modal-title').textContent = "Nuovo Esercizio";
             document.getElementById('modal-ex-id').value = "";
             document.getElementById('modal-ex-name').value = "";
-            document.getElementById('modal-ex-group').value = "Petto";
+            document.getElementById('modal-ex-group').value = "Altro";
         }
     }
 

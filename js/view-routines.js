@@ -130,6 +130,24 @@ function renderRoutines(plan, fromHistory = false) {
     let ghost = null;
     let ghostOffsetY = 0;
     const dragListContainer = routineListContainer;
+    let scrollInterval = null;
+    let lastClientY = 0;
+
+    const autoScrollLoop = () => {
+        if (!draggedItem) return;
+
+        const viewportHeight = window.innerHeight;
+        const scrollZone = 100;
+        const scrollSpeed = 10;
+
+        if (lastClientY < scrollZone) {
+            window.scrollBy(0, -scrollSpeed);
+        } else if (lastClientY > viewportHeight - scrollZone) {
+            window.scrollBy(0, scrollSpeed);
+        }
+
+        scrollInterval = requestAnimationFrame(autoScrollLoop);
+    };
 
     const handleDragStart = (e) => {
         const handle = e.target.closest('.drag-handle');
@@ -155,7 +173,10 @@ function renderRoutines(plan, fromHistory = false) {
         draggedItem.classList.add('dragging-placeholder');
 
         const clientY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
+        lastClientY = clientY;
         ghostOffsetY = clientY - rect.top;
+
+        scrollInterval = requestAnimationFrame(autoScrollLoop);
 
         document.addEventListener('touchmove', handleDragMove, { passive: false });
         document.addEventListener('mousemove', handleDragMove);
@@ -167,6 +188,7 @@ function renderRoutines(plan, fromHistory = false) {
         if (!ghost) return;
         e.preventDefault();
         const clientY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
+        lastClientY = clientY;
         
         // Muovi Ghost
         ghost.style.top = `${clientY - ghostOffsetY}px`;
@@ -196,6 +218,11 @@ function renderRoutines(plan, fromHistory = false) {
     };
 
     const handleDragEnd = () => {
+        if (scrollInterval) {
+            cancelAnimationFrame(scrollInterval);
+            scrollInterval = null;
+        }
+
         if (ghost) {
             ghost.remove();
             ghost = null;

@@ -149,6 +149,24 @@ function renderRoutineEditor(routineId, planId, fromHistory = false) {
     let placeholder = null;
     let dragOffsetY = 0;
     const containerEl = exercisesContainer;
+    let scrollInterval = null;
+    let lastClientY = 0;
+
+    const autoScrollLoop = () => {
+        if (!draggedItem) return;
+
+        const viewportHeight = window.innerHeight;
+        const scrollZone = 100;
+        const scrollSpeed = 10;
+
+        if (lastClientY < scrollZone) {
+            window.scrollBy(0, -scrollSpeed);
+        } else if (lastClientY > viewportHeight - scrollZone) {
+            window.scrollBy(0, scrollSpeed);
+        }
+
+        scrollInterval = requestAnimationFrame(autoScrollLoop);
+    };
 
     const handleDragStart = (e) => {
         const handle = e.target.closest('.drag-handle');
@@ -163,6 +181,7 @@ function renderRoutineEditor(routineId, planId, fromHistory = false) {
         // 1. Calcola offset basandosi sulla card ATTUALE (espansa)
         const rect = card.getBoundingClientRect();
         const clientY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
+        lastClientY = clientY;
         dragOffsetY = clientY - rect.top;
         
         // 2. Crea Placeholder (Clone per mantenere dimensioni identiche)
@@ -185,6 +204,8 @@ function renderRoutineEditor(routineId, planId, fromHistory = false) {
         // 4. Compatta la lista
         containerEl.classList.add('dragging-active');
 
+        scrollInterval = requestAnimationFrame(autoScrollLoop);
+
         document.addEventListener('touchmove', handleDragMove, { passive: false });
         document.addEventListener('mousemove', handleDragMove);
         document.addEventListener('touchend', handleDragEnd);
@@ -195,6 +216,7 @@ function renderRoutineEditor(routineId, planId, fromHistory = false) {
         if (!draggedItem) return;
         e.preventDefault();
         const clientY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
+        lastClientY = clientY;
         
         // Muovi Card Reale
         draggedItem.style.top = `${clientY - dragOffsetY}px`;
@@ -238,6 +260,11 @@ function renderRoutineEditor(routineId, planId, fromHistory = false) {
     };
 
     const handleDragEnd = () => {
+        if (scrollInterval) {
+            cancelAnimationFrame(scrollInterval);
+            scrollInterval = null;
+        }
+
         if (draggedItem) {
             // Ripristina la card nella posizione del placeholder
             if (placeholder && placeholder.parentNode) {
@@ -317,7 +344,7 @@ function renderRoutineEditor(routineId, planId, fromHistory = false) {
             }
 
             selectedNames.forEach(name => {
-                const newExercise = { id: Date.now() + Math.random(), name: name, sets: 3, reps: '8-12', rest: '90', weight: '', notes: '', series: [] };
+                const newExercise = { id: Date.now() + Math.random(), name: name, sets: 1, reps: '', rest: '90', weight: '', notes: '', series: [] };
 
                 // Cerca l'ultima performance per questo esercizio per copiare i dati "prev"
                 let lastPerformedSeries = null;
