@@ -92,10 +92,8 @@ function handleGlobalTick() {
                 SystemNotifier.showRestFinishedNotification({ routineName, nextExerciseName, setInfo, targetInfo });
             }
 
-            if (_cardToScrollToAfterRest) {
-                scrollToCard(_cardToScrollToAfterRest);
-                _cardToScrollToAfterRest = null;
-            }
+            scrollToActiveExercise();
+            _cardToScrollToAfterRest = null;
         }
         updateRestDisplay();
 
@@ -147,38 +145,32 @@ function scrollToCard(cardElement) {
 }
 
 function scrollToActiveExercise() {
-    const allCards = Array.from(document.querySelectorAll('#active-workout-content .workout-card'));
-    if (allCards.length === 0) return;
-    
-    // Trova l'ultimo esercizio con almeno una serie completata (attività recente)
-    let lastActiveIndex = -1;
-    for (let i = allCards.length - 1; i >= 0; i--) {
-        if (allCards[i].querySelectorAll('.workout-checkbox:checked').length > 0) {
-            lastActiveIndex = i;
-            break;
-        }
+    let targetCard = _cardToScrollToAfterRest;
+
+    // Se non c'è un target immediato, controlla la sessione per recuperare l'ultimo esercizio attivo
+    if (!targetCard && currentWorkoutSession && currentWorkoutSession.nextExerciseId) {
+        targetCard = document.querySelector(`.workout-card[data-exercise-id="${currentWorkoutSession.nextExerciseId}"]`);
     }
 
-    let targetCard = null;
+    if (targetCard) {
+        // Verifica se il target è completato
+        const cbs = Array.from(targetCard.querySelectorAll('.workout-checkbox'));
+        const isComplete = cbs.length > 0 && cbs.every(cb => cb.checked);
 
-    if (lastActiveIndex === -1) {
-        // Nessuna attività: vai al primo incompleto (o il primo in assoluto)
+        if (isComplete) {
+            // Se è completato, cerca il prossimo incompleto
+            targetCard = findNextIncompleteCard(targetCard);
+        }
+        // Se non è completato, rimaniamo su questo (magnetismo sull'esercizio attivo)
+    }
+
+    // Fallback: se ancora nessun target (o tutti completi), cerca il primo incompleto in assoluto
+    if (!targetCard) {
+        const allCards = Array.from(document.querySelectorAll('#active-workout-content .workout-card'));
         targetCard = allCards.find(card => {
             const cbs = Array.from(card.querySelectorAll('.workout-checkbox'));
             return cbs.length > 0 && !cbs.every(cb => cb.checked);
-        }) || allCards[0];
-    } else {
-        const lastCard = allCards[lastActiveIndex];
-        const cbs = Array.from(lastCard.querySelectorAll('.workout-checkbox'));
-        const isComplete = cbs.length > 0 && cbs.every(cb => cb.checked);
-
-        if (!isComplete) {
-            // Esercizio in corso: vai qui
-            targetCard = lastCard;
-        } else {
-            // Esercizio completato: cerca il prossimo da fare (logica timer recupero)
-            targetCard = findNextIncompleteCard(lastCard);
-        }
+        });
     }
 
     if (targetCard) {
@@ -381,6 +373,9 @@ function startRestTimer(seconds, nextCardToFocus = null, showFullscreen = true, 
         restEndTime = Date.now() + (seconds * 1000);
         currentWorkoutSession.restEndTime = restEndTime;
         currentWorkoutSession.initialRestSeconds = total;
+        if (nextCardToFocus) {
+            currentWorkoutSession.nextExerciseId = nextCardToFocus.dataset.exerciseId;
+        }
         saveWorkoutSession();
     }
 
@@ -434,9 +429,9 @@ function adjustRestTimer(seconds) {
 function skipRestTimer() {
     if (restEndTime <= 0) return;
 
+    scrollToActiveExercise();
     _cardToScrollToAfterRest = null;
     restEndTime = 0;
-    initialRestSeconds = 0;
     currentRestSeconds = 0;
     const header = document.querySelector('.workout-header');
     if (header) header.classList.remove('rest-finished');
@@ -446,7 +441,6 @@ function skipRestTimer() {
     }
     if (currentWorkoutSession) {
         delete currentWorkoutSession.restEndTime;
-        delete currentWorkoutSession.initialRestSeconds;
         saveWorkoutSession();
     }
     updateRestDisplay();
@@ -581,6 +575,12 @@ function renderWorkout(routineId, planId, fromHistory = false) {
         return;
     }
 
+    // Calcola il recupero iniziale per la visualizzazione (primo esercizio)
+    let firstRest = 90;
+    if (routine.exercises && routine.exercises.length > 0) {
+        firstRest = routine.exercises[0].rest || 90;
+    }
+
     // Se NON stiamo riprendendo la stessa sessione E NON siamo in sola lettura (quindi nuovo allenamento legittimo)
     if (!isResuming && !isReadOnly) {
         if (timerWorker) timerWorker.postMessage('stop');
@@ -588,6 +588,7 @@ function renderWorkout(routineId, planId, fromHistory = false) {
         currentRestSeconds = 0;
         currentWorkoutSession = null;
         localStorage.removeItem('active_workout_session');
+        initialRestSeconds = firstRest;
 
         // RESET LOGIC: Prepara la routine per una nuova sessione
         // Sposta i valori "fatti" dell'ultima volta in "target" e pulisce gli input
@@ -603,6 +604,14 @@ function renderWorkout(routineId, planId, fromHistory = false) {
             }
         });
         saveAppData();
+    } else if (isResuming && currentWorkoutSession) {
+        if (currentWorkoutSession.initialRestSeconds) {
+            initialRestSeconds = currentWorkoutSession.initialRestSeconds;
+        } else {
+            initialRestSeconds = firstRest;
+        }
+    } else {
+        initialRestSeconds = firstRest;
     }
 
     // Helper per attributo disabled
@@ -708,7 +717,7 @@ function renderWorkout(routineId, planId, fromHistory = false) {
                 </div>
             </div>
             <div class="workout-header-bottom" style="${isReadOnly ? 'display:none;' : ''}">
-                <span id="rest-timer-display" class="rest-timer-large">00:00</span>
+                <span id="rest-timer-display" class="rest-timer-large"><span class="rest-timer-current">0</span><small class="rest-timer-total">/${initialRestSeconds}s</small></span>
                 <div class="rest-timer-controls">
                     <button id="btn-rest-minus" class="rest-btn" style="border-radius: 12px;">-15</button>
                     <button id="btn-rest-plus" class="rest-btn" style="border-radius: 12px;">+15</button>

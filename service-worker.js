@@ -1,4 +1,4 @@
-const CACHE_NAME = 'one-percent-v77';
+const CACHE_NAME = 'one-percent-v79';
 const ASSETS_TO_CACHE = [
     './',
     './index.html',
@@ -22,6 +22,7 @@ const ASSETS_TO_CACHE = [
     './js/view-settings.js',
     './js/view-routine-editor.js',
     './js/view-exercise-selector.js',
+    './js/view-calendar.js',
     './js/view-workout.js',
     './js/notifications.js',
     './js/view-rest-timer.js',
@@ -71,6 +72,16 @@ self.addEventListener('fetch', (event) => {
         });
     };
 
+    // STRATEGIA APP SHELL (Navigazione):
+    // Se è una richiesta di navigazione (es. reload pagina), restituisci SUBITO index.html.
+    // Non tentare la rete, evitando il blocco di 3s su connessioni Lie-fi.
+    if (event.request.mode === 'navigate') {
+        event.respondWith(
+            caches.match('./index.html').then((response) => response || fetch(event.request))
+        );
+        return;
+    }
+
     event.respondWith(
         caches.match(event.request, {ignoreSearch: true})
             .then((response) => {
@@ -85,12 +96,6 @@ self.addEventListener('fetch', (event) => {
                     fetch(event.request),
                     timeoutPromise(3000)
                 ]).catch((err) => {
-                    // 3. Se la rete fallisce o va in timeout...
-                    
-                    // Se è una richiesta di navigazione (apertura app), restituisci sempre index.html
-                    if (event.request.mode === 'navigate') {
-                        return caches.match('./index.html');
-                    }
                     // Altrimenti lancia errore (o potremmo restituire un placeholder)
                     throw err;
                 });

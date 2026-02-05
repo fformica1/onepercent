@@ -344,38 +344,9 @@ function renderRoutineEditor(routineId, planId, fromHistory = false) {
             }
 
             selectedNames.forEach(name => {
+                // Imposta 1 serie di default e non copiare lo storico
+                // per avere un esercizio pulito in una nuova routine.
                 const newExercise = { id: Date.now() + Math.random(), name: name, sets: 1, reps: '', rest: '90', weight: '', notes: '', series: [] };
-
-                // Cerca l'ultima performance per questo esercizio per copiare i dati "prev"
-                let lastPerformedSeries = null;
-                let lastTimestamp = 0;
-
-                const allPlans = [...(AppState.plans || []), ...(AppState.archivedPlans || [])];
-                allPlans.forEach(plan => {
-                    if (plan.routines) {
-                        plan.routines.forEach(routine => {
-                            if (routine.lastPerformed && routine.lastPerformed > lastTimestamp) {
-                                if (routine.exercises) {
-                                    const oldEx = routine.exercises.find(ex => ex.name === name);
-                                    if (oldEx && oldEx.series && oldEx.series.some(s => s.prevWeight || s.prevReps)) {
-                                        lastTimestamp = routine.lastPerformed;
-                                        lastPerformedSeries = oldEx.series;
-                                    }
-                                }
-                            }
-                        });
-                    }
-                });
-
-                if (lastPerformedSeries) {
-                    newExercise.series = lastPerformedSeries.map(s => ({
-                        weight: s.weight || '', // Copia anche i target
-                        reps: s.reps || '',
-                        prevWeight: s.prevWeight || '',
-                        prevReps: s.prevReps || ''
-                    }));
-                    newExercise.sets = newExercise.series.length;
-                }
 
                 const div = document.createElement('div');
                 div.innerHTML = renderExerciseEditorHTML(newExercise);
