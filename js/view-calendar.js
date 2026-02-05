@@ -1,4 +1,8 @@
 function renderCalendar() {
+    // Cleanup modale dettagli sessione se esiste (per evitare duplicati nel body)
+    const existingModal = document.getElementById('session-details-modal');
+    if (existingModal) existingModal.remove();
+
     const container = document.getElementById('view-calendar');
     container.classList.remove('hidden');
     const now = new Date();
@@ -54,23 +58,30 @@ function renderCalendar() {
                                     logs.forEach(l => {
                                         let matched = false;
                                         
+                                        const exercisePayload = {
+                                            name: ex.name,
+                                            series: l.seriesData,
+                                            defaultReps: (l.targetReps !== undefined) ? l.targetReps : ex.reps,
+                                            defaultWeight: (l.targetWeight !== undefined) ? l.targetWeight : ex.weight
+                                        };
+                                        
                                         if (l.timestamp) {
                                             const session = explicitSessions.find(s => s.timestamp === l.timestamp);
                                             if (session) {
-                                                session.exercises.push({ name: ex.name, series: l.seriesData });
+                                                session.exercises.push(exercisePayload);
                                                 matched = true;
                                             }
                                         } else {
                                             // Legacy: cerca sessione senza timestamp
                                             const session = explicitSessions.find(s => !s.timestamp);
                                             if (session) {
-                                                session.exercises.push({ name: ex.name, series: l.seriesData });
+                                                session.exercises.push(exercisePayload);
                                                 matched = true;
                                             }
                                         }
 
                                         if (!matched) {
-                                            orphanExercises.push({ name: ex.name, series: l.seriesData, timestamp: l.timestamp });
+                                            orphanExercises.push({ ...exercisePayload, timestamp: l.timestamp });
                                         }
                                     });
                                 }
@@ -171,12 +182,34 @@ function renderCalendar() {
     
     // Container per il riepilogo (inizialmente vuoto/nascosto)
     html += `<div id="calendar-summary-container"></div>`;
+    
+    // Modale Dettagli Sessione
+    html += `
+        <div id="session-details-modal" class="modal-overlay hidden">
+            <div class="modal-content" style="max-height: 80vh; display: flex; flex-direction: column; padding: 20px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 10px;">
+                    <h3 id="sd-routine-name" style="margin: 0; font-size: 1.2rem; color: var(--primary);">Routine</h3>
+                    <span id="sd-duration" style="font-size: 0.9rem; color: var(--text-muted); font-weight: 500;">0 min</span>
+                </div>
+                <div id="sd-exercises-list" style="overflow-y: auto; flex-grow: 1;">
+                    <!-- Content injected via JS -->
+                </div>
+                <div class="modal-actions" style="margin-top: 20px; justify-content: flex-end;">
+                    <button id="btn-close-session-details" class="primary-btn" style="width: 100%;">Chiudi</button>
+                </div>
+            </div>
+        </div>
+    `;
 
     container.innerHTML = html;
 
     // Scrolla all'ultimo mese (corrente)
     const scroller = container.querySelector('.calendar-scroller');
     if (scroller) scroller.scrollLeft = scroller.scrollWidth;
+
+    // Sposta la modale nel body per gestire correttamente lo z-index
+    const modalEl = document.getElementById('session-details-modal');
+    if (modalEl) document.body.appendChild(modalEl);
 
     // Gestione pulsanti navigazione
     const prevBtn = container.querySelector('#cal-prev-btn');
@@ -207,7 +240,7 @@ function renderCalendar() {
                 // Ordina le sessioni dalla più recente alla meno recente
                 sessions.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
                 
-                const cardsHtml = sessions.map(session => {
+                const cardsHtml = sessions.map((session, index) => {
                     // Formatta durata
                     let durationText = '';
                     if (session.duration > 0) {
@@ -218,14 +251,13 @@ function renderCalendar() {
                     // Formatta lista esercizi
                     const exercisesList = session.exercises.map(ex => {
                         const sets = ex.series.length;
-                        const reps = ex.series.length > 0 ? ex.series[0].reps : '-';
-                        const weights = ex.series.map(s => (s.weight !== undefined && s.weight !== '') ? `${s.weight}kg` : '-').join(', ');
+                        const targetReps = (ex.defaultReps !== undefined && ex.defaultReps !== null && ex.defaultReps !== '') ? ex.defaultReps : '-';
                         
-                        return `<li><span class="summary-ex-name">${ex.name}</span><span class="summary-ex-data">: ${sets} x ${reps} <span class="summary-weights">(${weights})</span></span></li>`;
+                        return `<li><span class="summary-ex-name">${ex.name}</span><span class="summary-ex-data">: ${sets} x ${targetReps}</span></li>`;
                     }).join('');
 
                     return `
-                        <div class="calendar-summary-card">
+                        <div class="calendar-summary-card clickable-session-card" data-index="${index}" style="cursor: pointer; -webkit-tap-highlight-color: transparent;">
                             <div class="summary-header" style="display: flex; justify-content: space-between; align-items: center;">
                                 <h4>${session.routineName}</h4>
                                 <div style="display: flex; align-items: center; gap: 15px;">
@@ -249,10 +281,70 @@ function renderCalendar() {
         });
     });
 
-    // Gestione Eliminazione Allenamento (Delegata sul container del sommario)
+    // Gestione Click su Card (Dettagli) e Eliminazione (Delegata sul container del sommario)
     const summaryContainer = document.getElementById('calendar-summary-container');
     if (summaryContainer) {
         summaryContainer.addEventListener('click', (e) => {
+            // 1. Gestione Apertura Dettagli
+            const card = e.target.closest('.clickable-session-card');
+            // Assicuriamoci di non aver cliccato sul pulsante elimina
+            if (card && !e.target.closest('.delete-session-btn')) {
+                const index = parseInt(card.dataset.index);
+                const selectedDay = container.querySelector('.calendar-day.selected');
+                
+                if (selectedDay) {
+                    const dateKey = selectedDay.dataset.date;
+                    const sessions = historyMap[dateKey];
+                    // Nota: sessions è già ordinato perché historyMap[dateKey] è stato ordinato nel click handler del giorno
+                    
+                    if (sessions && sessions[index]) {
+                        const session = sessions[index];
+                        
+                        // Popola Modale
+                        document.getElementById('sd-routine-name').textContent = session.routineName;
+                        
+                        let durationText = '-';
+                        if (session.duration > 0) {
+                            const minutes = Math.floor(session.duration / 60);
+                            durationText = `${minutes} min`;
+                        }
+                        document.getElementById('sd-duration').textContent = durationText;
+
+                        const listContainer = document.getElementById('sd-exercises-list');
+                        listContainer.innerHTML = session.exercises.map(ex => {
+                            const setsHtml = ex.series.map((s, i) => {
+                                const weight = (s.weight !== undefined && s.weight !== '') ? s.weight : '-';
+                                const reps = (s.reps !== undefined && s.reps !== '') ? s.reps : '-';
+                                return `
+                                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; text-align: center; padding: 4px 0; font-size: 0.9rem;">
+                                        <span style="color: var(--text-muted);">${i + 1}</span>
+                                        <span style="font-weight: 500;">${weight}</span>
+                                        <span style="font-weight: 500;">${reps}</span>
+                                    </div>
+                                `;
+                            }).join('');
+
+                            return `
+                                <div style="margin-bottom: 20px;">
+                                    <h4 style="margin-bottom: 8px; color: var(--text-main); font-size: 1rem;">${ex.name}</h4>
+                                    <div style="background-color: var(--bg-body); border-radius: 8px; padding: 10px;">
+                                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; text-align: center; margin-bottom: 8px; color: var(--text-muted); font-size: 0.8rem; font-weight: 600;">
+                                            <span>Set</span>
+                                            <span>Kg</span>
+                                            <span>Reps</span>
+                                        </div>
+                                        ${setsHtml}
+                                    </div>
+                                </div>
+                            `;
+                        }).join('');
+
+                        openModal('session-details-modal');
+                    }
+                }
+            }
+
+            // 2. Gestione Eliminazione Allenamento
             const deleteBtn = e.target.closest('.delete-session-btn');
             if (deleteBtn) {
                 e.stopPropagation();
@@ -305,6 +397,12 @@ function renderCalendar() {
                 );
             }
         });
+    }
+
+    // Listener chiusura modale dettagli
+    const closeDetailsBtn = document.getElementById('btn-close-session-details');
+    if (closeDetailsBtn) {
+        closeDetailsBtn.onclick = () => closeModal('session-details-modal');
     }
 
     // Seleziona oggi di default

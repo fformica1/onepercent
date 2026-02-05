@@ -1215,7 +1215,9 @@ function renderWorkout(routineId, planId, fromHistory = false) {
                 ex.history.push({
                     date: workoutDate,
                     timestamp: sessionTimestamp,
-                    seriesData: completedSeriesData
+                    seriesData: completedSeriesData,
+                    targetReps: ex.reps || '',
+                    targetWeight: ex.weight || ''
                 });
                 if (ex.history.length > 30) ex.history = ex.history.slice(ex.history.length - 30);
             }

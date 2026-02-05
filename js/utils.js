@@ -118,14 +118,17 @@ function setFabAction(action, iconHtml) {
 }
 
 // --- GESTIONE MODALI (Animazioni) ---
-function openModal(modalId) {
+function openModal(modalId, pushState = true) {
     const modal = document.getElementById(modalId);
     if (!modal) return;
 
     // Push history state per gestire il tasto indietro
-    if (window.history.state && window.history.state.modalOpen !== modalId) {
-        const newState = { ...window.history.state, modalOpen: modalId };
-        window.history.pushState(newState, '', window.location.hash);
+    if (pushState) {
+        const currentState = window.history.state || {};
+        if (currentState.modalOpen !== modalId) {
+            const newState = { ...currentState, modalOpen: modalId };
+            window.history.pushState(newState, '', window.location.hash);
+        }
     }
 
     modal.classList.remove('hidden');
@@ -170,6 +173,7 @@ function closeModal(modalId) {
     // (Questo accade quando si chiude col tasto "Annulla" o "Salva", non col tasto indietro)
     if (window.history.state && window.history.state.modalOpen === modalId) {
         window.history.back();
+        return; // Lascia che sia l'evento popstate a chiudere effettivamente la modale
     }
     
     // Rimuovi listener viewport se presenti
@@ -186,7 +190,16 @@ function closeModal(modalId) {
     modal.classList.remove('open');
     setTimeout(() => {
         modal.classList.add('hidden');
-        document.body.classList.remove('no-scroll');
+        
+        // Rimuovi no-scroll solo se non ci sono altre modali aperte E il calendario non è aperto
+        const otherModals = document.querySelectorAll('.modal-overlay.open');
+        const calendarOpen = document.querySelector('main') && document.querySelector('main').classList.contains('calendar-open');
+        // Check extra: se siamo nella vista calendar (history state), non rimuovere no-scroll
+        const isCalendarView = window.history.state && window.history.state.view === 'calendar';
+        
+        if (otherModals.length === 0 && !calendarOpen && !isCalendarView) {
+            document.body.classList.remove('no-scroll');
+        }
     }, 300); // Deve corrispondere alla durata della transizione CSS
 }
 

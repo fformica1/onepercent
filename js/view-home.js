@@ -3,18 +3,32 @@ let homeDragHandlers = null;
 
 function renderHome(fromHistory = false) {
     window.scrollTo(0, 0);
-    // Reset transform se torniamo alla home
-    document.querySelector('main').style.transform = '';
-    document.querySelector('main').classList.remove('calendar-open');
-    document.body.classList.remove('no-scroll');
-    const fab = document.getElementById('fab-action');
-    if(fab) {
-        fab.classList.remove('fab-hidden');
-        fab.classList.remove('keyboard-hidden');
-        fab.style.transform = '';
+    
+    const mainEl = document.querySelector('main');
+    const MAX_DRAG = window.innerHeight - 80;
+    const isCalendarState = history.state && history.state.view === 'calendar';
+
+    // Reset transform SOLO se NON siamo nello stato calendar
+    if (!isCalendarState) {
+        mainEl.style.transform = '';
+        mainEl.classList.remove('calendar-open');
+        document.body.classList.remove('no-scroll');
+        const fab = document.getElementById('fab-action');
+        if(fab) {
+            fab.classList.remove('fab-hidden');
+            fab.classList.remove('keyboard-hidden');
+            fab.style.transform = '';
+        }
+    } else {
+        // Se siamo in calendar, forza l'apertura visiva
+        mainEl.style.transform = `translateY(${MAX_DRAG}px)`;
+        mainEl.classList.add('calendar-open');
+        document.body.classList.add('no-scroll');
+        const fab = document.getElementById('fab-action');
+        if(fab) fab.style.transform = `translateY(${MAX_DRAG}px)`;
     }
 
-    if (!fromHistory) {
+    if (!fromHistory && !isCalendarState) {
         history.pushState({view: 'home'}, 'Home', '#home');
     }
     switchView('home');
@@ -111,13 +125,11 @@ function renderHome(fromHistory = false) {
 
     // --- LOGICA DRAG CALENDARIO (SEMPRE ATTIVA) ---
     const handle = document.getElementById('calendar-trigger-area');
-    const mainEl = document.querySelector('main');
     let startY = 0;
     let currentY = 0;
     let isDragging = false;
     let wasDragged = false;
     // MAX_DRAG dinamico: altezza finestra - 80px (lascia visibile solo la maniglia in basso)
-    const MAX_DRAG = window.innerHeight - 80;
 
     const closeCalendarState = () => {
         mainEl.style.transform = `translateY(0px)`;
@@ -229,7 +241,18 @@ function renderHome(fromHistory = false) {
     document.addEventListener('touchend', onTouchEnd);
     homeDragHandlers = { move: onTouchMove, end: onTouchEnd };
 
-    setBackAction(null);
+    // Imposta il tasto indietro in base allo stato
+    if (isCalendarState) {
+        setBackAction(() => {
+             window.updateCalendarState(false);
+             if (history.state && history.state.view === 'calendar') history.back();
+        });
+        const settingsBtn = document.getElementById('btn-settings');
+        if(settingsBtn) settingsBtn.classList.remove('visible');
+    } else {
+        setBackAction(null);
+    }
+
     const pencilIcon = '<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 0 24 24" width="24px" fill="currentColor"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>';
     setFabAction(() => renderPlans(), pencilIcon);
 
@@ -250,3 +273,31 @@ function renderHome(fromHistory = false) {
         });
     }, 150);
 }
+
+// Helper globale per forzare lo stato visivo del calendario (usato dal router in index.html)
+window.updateCalendarState = (isOpen) => {
+    const mainEl = document.querySelector('main');
+    const fab = document.getElementById('fab-action');
+    const settingsBtn = document.getElementById('btn-settings');
+    const MAX_DRAG = window.innerHeight - 80;
+
+    if (isOpen) {
+        mainEl.style.transform = `translateY(${MAX_DRAG}px)`;
+        mainEl.classList.add('calendar-open');
+        document.body.classList.add('no-scroll');
+        if(fab) fab.style.transform = `translateY(${MAX_DRAG}px)`;
+        if(settingsBtn) settingsBtn.classList.remove('visible');
+        
+        setBackAction(() => {
+             window.updateCalendarState(false);
+             if (history.state && history.state.view === 'calendar') history.back();
+        });
+    } else {
+        mainEl.style.transform = `translateY(0px)`;
+        mainEl.classList.remove('calendar-open');
+        document.body.classList.remove('no-scroll');
+        if(fab) fab.style.transform = `translateY(0px)`;
+        if(settingsBtn) settingsBtn.classList.add('visible');
+        setBackAction(null);
+    }
+};

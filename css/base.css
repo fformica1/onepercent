@@ -287,6 +287,7 @@ body.no-scroll {
     opacity: 0;
     transition: opacity 0.3s ease;
     pointer-events: none; /* Previene click durante il fade-out */
+    z-index: 1000; /* Assicura che copra l'header (z-index: 100) */
 }
 
 .modal-overlay.open {
