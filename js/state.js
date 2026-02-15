@@ -149,8 +149,8 @@ function getDefaultPlans(allExercises) {
     ];
 
     const pullSession = [
-        findEx("Deadlift", 3, 6, 180),
-        findEx("Pull Up", 4, 6, 150),
+        findEx("Deadlift", 4, 6, 180),
+        findEx("Pull Up", 3, 6, 150),
         findEx("Rematore con Bilanciere", 3, 10, 90),
         findEx("Lat Machine", 3, 10, 90),
         findEx("Face Pull", 3, 10, 60),
