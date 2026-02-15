@@ -141,7 +141,7 @@ function getDefaultPlans(allExercises) {
 
     const pushSession = [
         findEx("Panca Piana", 4, 6, 180),
-        findEx("Military Press", 3, 6, 150),
+        findEx("Military Press", 4, 6, 150),
         findEx("Panca Inclinata Manubri", 3, 10, 90), // Panca Inclinata Manubri
         findEx("Alzate Laterali", 3, 10, 60),
         findEx("Dip alle Parallele", 3, 10, 90),
@@ -162,8 +162,9 @@ function getDefaultPlans(allExercises) {
         findEx("Leg Press", 3, 6, 150),
         findEx("Stacchi Rumeni", 3, 10, 90),
         findEx("Affondi con Manubri", 3, 10, 90),
-        findEx("Leg Extention", 3, 10, 60),
-        findEx("Leg Curl", 3, 10, 60)
+        findEx("Leg Extention", 3, 10, 90),
+        findEx("Leg Curl", 3, 10, 90),
+        findEx("Calf Machine", 3, 15, 60)
     ];
 
     return [{
