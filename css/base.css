@@ -401,3 +401,13 @@ body.no-scroll {
     text-align: center;
     font-variant-numeric: tabular-nums;
 }
+
+.clickable-prev-data {
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    user-select: none;
+}
+
+.clickable-prev-data:active {
+    background-color: transparent !important;
+}

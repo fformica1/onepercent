@@ -132,6 +132,13 @@ function openModal(modalId, pushState = true) {
     }
 
     modal.classList.remove('hidden');
+    
+    // Reset scroll position
+    const content = modal.querySelector('.modal-content');
+    if (content) content.scrollTop = 0;
+    const innerScrolls = modal.querySelectorAll('#sd-exercises-list, #exercise-history-content');
+    innerScrolls.forEach(el => el.scrollTop = 0);
+
     // Force reflow per attivare la transizione CSS
     void modal.offsetWidth; 
     modal.classList.add('open');

@@ -147,9 +147,17 @@ function scrollToCard(cardElement) {
 function scrollToActiveExercise() {
     let targetCard = _cardToScrollToAfterRest;
 
+    // Verifica che il riferimento sia ancora valido nel DOM
+    if (targetCard && !document.body.contains(targetCard)) {
+        targetCard = null;
+        _cardToScrollToAfterRest = null;
+    }
+
     // Se non c'è un target immediato, controlla la sessione per recuperare l'ultimo esercizio attivo
     if (!targetCard && currentWorkoutSession && currentWorkoutSession.nextExerciseId) {
-        targetCard = document.querySelector(`.workout-card[data-exercise-id="${currentWorkoutSession.nextExerciseId}"]`);
+        targetCard = document.querySelector(`#active-workout-content .workout-card[data-exercise-id="${currentWorkoutSession.nextExerciseId}"]`);
+        // Se lo troviamo, ripristiniamo anche il riferimento globale per il futuro
+        if (targetCard) _cardToScrollToAfterRest = targetCard;
     }
 
     if (targetCard) {
@@ -262,7 +270,10 @@ function getNextExerciseInfo() {
         const rows = Array.from(targetCard.querySelectorAll('.workout-set-row'));
         const totalSets = rows.length;
         // Trova la prima serie non completata
-        const nextSetIndex = rows.findIndex(row => !row.querySelector('.workout-checkbox').checked);
+        const nextSetIndex = rows.findIndex(row => {
+            const cb = row.querySelector('.workout-checkbox');
+            return cb && !cb.checked;
+        });
         
         if (nextSetIndex !== -1) {
             const row = rows[nextSetIndex];
@@ -534,6 +545,9 @@ function renderWorkout(routineId, planId, fromHistory = false) {
         history.pushState({view: 'workout', routineId, planId}, 'Allenamento', '#workout');
     }
 
+    // Reset del riferimento alla card per lo scroll automatico (poiché il DOM viene rigenerato)
+    _cardToScrollToAfterRest = null;
+
     // Disabilita il ripristino automatico dello scroll del browser per garantire che il magnetismo funzioni
     if ('scrollRestoration' in history) {
         history.scrollRestoration = 'manual';
@@ -643,8 +657,10 @@ function renderWorkout(routineId, planId, fromHistory = false) {
 
             const valWeight = finalWeight !== '' ? `value="${finalWeight}"` : '';
             const valReps = finalReps !== '' ? `value="${finalReps}"` : '';
-            const checkedAttr = s.completed ? 'checked' : '';
-            const rowClass = s.completed ? 'workout-set-row completed' : 'workout-set-row';
+            
+            const showCompleted = s.completed && !isReadOnly;
+            const checkedAttr = showCompleted ? 'checked' : '';
+            const rowClass = showCompleted ? 'workout-set-row completed' : 'workout-set-row';
 
             setsHtml += `
                 <div class="${rowClass}">
@@ -698,6 +714,21 @@ function renderWorkout(routineId, planId, fromHistory = false) {
         `;
     }).join('');
 
+    // Pulsante Modifica Routine (visibile solo se workout iniziato e non in sola lettura)
+    const editBtnStyle = (isResuming && !isReadOnly) ? 'display: flex;' : 'display: none;';
+    const editRoutineBtnHtml = !isReadOnly ? `
+        <div id="container-edit-routine-btn" style="${editBtnStyle} justify-content: flex-end; padding: 20px 20px 40px 20px;">
+            <button id="btn-edit-active-routine" style="
+                width: 56px; height: 56px; border-radius: 50%; 
+                background-color: var(--text-main); color: var(--bg-body); 
+                border: none; box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+                display: flex; align-items: center; justify-content: center; cursor: pointer;
+            ">
+                <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 0 24 24" width="24px" fill="currentColor"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+            </button>
+        </div>
+    ` : '';
+
     const actionButtonHtml = isReadOnly 
         ? `<button class="end-workout-btn" style="opacity:0.5; cursor:default; border-radius: 12px;">Vista</button>`
         : `<button id="btn-workout-action" class="end-workout-btn" style="border-radius: 12px;">Inizia</button>`;
@@ -737,7 +768,7 @@ function renderWorkout(routineId, planId, fromHistory = false) {
                 </div>
             </div>
         </div>
-        <div id="active-workout-content">${exercisesHtml}</div>
+        <div id="active-workout-content">${exercisesHtml}${editRoutineBtnHtml}</div>
     `;
 
     // Sposta le modali nel body per gestire correttamente lo z-index
@@ -772,6 +803,14 @@ function renderWorkout(routineId, planId, fromHistory = false) {
         }
     });
 
+    // Gestione click pulsante modifica routine in corso
+    const editRoutineBtn = document.getElementById('btn-edit-active-routine');
+    if (editRoutineBtn) {
+        editRoutineBtn.onclick = () => {
+            renderRoutineEditor(routineId, planId);
+        };
+    }
+
 
     const timerEl = document.getElementById('workout-timer');
     
@@ -802,7 +841,26 @@ function renderWorkout(routineId, planId, fromHistory = false) {
             const now = Date.now();
             const remaining = Math.ceil((currentWorkoutSession.restEndTime - now) / 1000);
             if (remaining > 0) {
-                startRestTimer(remaining, null, false, currentWorkoutSession.initialRestSeconds);
+                // FIX: Recupera il riferimento DOM alla card attiva per ripristinare _cardToScrollToAfterRest
+                let activeCard = null;
+                if (currentWorkoutSession.nextExerciseId) {
+                    activeCard = document.querySelector(`#active-workout-content .workout-card[data-exercise-id="${currentWorkoutSession.nextExerciseId}"]`);
+                }
+                
+                // Fallback: se l'esercizio salvato non esiste più (es. cancellato), associa il timer al primo incompleto
+                if (!activeCard) {
+                     const allCards = Array.from(document.querySelectorAll('#active-workout-content .workout-card'));
+                     activeCard = allCards.find(card => {
+                        const cbs = Array.from(card.querySelectorAll('.workout-checkbox'));
+                        return cbs.length > 0 && !cbs.every(cb => cb.checked);
+                    });
+                    if (activeCard) {
+                        currentWorkoutSession.nextExerciseId = activeCard.dataset.exerciseId;
+                        saveWorkoutSession();
+                    }
+                }
+                
+                startRestTimer(remaining, activeCard, false, currentWorkoutSession.initialRestSeconds);
             }
             else if (!currentWorkoutSession.restFinished) { /* Opzionale: gestire fine timer mentre offline */ }
         }
@@ -833,6 +891,9 @@ function renderWorkout(routineId, planId, fromHistory = false) {
         isWorkoutStarted = true;
         actionBtn.textContent = "Fine";
         actionBtn.classList.add('active-state');
+        
+        const editContainer = document.getElementById('container-edit-routine-btn');
+        if (editContainer) editContainer.style.display = 'flex';
         
         if (!currentWorkoutSession.startTime) {
             currentWorkoutSession.startTime = Date.now();
@@ -938,14 +999,6 @@ function renderWorkout(routineId, planId, fromHistory = false) {
                 }
                 if (e.target.classList.contains('input-reps')) {
                     exercise.series[setIndex].sessionReps = e.target.value;
-                }
-                
-                // Se la serie è già completata, aggiorna anche i dati "prev" per il prossimo allenamento
-                if (exercise.series[setIndex].completed) {
-                    const weightVal = row.querySelector('.input-weight').value || row.querySelector('.input-weight').placeholder;
-                    const repsVal = row.querySelector('.input-reps').value || row.querySelector('.input-reps').placeholder;
-                    exercise.series[setIndex].prevWeight = weightVal;
-                    exercise.series[setIndex].prevReps = repsVal;
                 }
 
                 saveAppData();
@@ -1108,10 +1161,6 @@ function renderWorkout(routineId, planId, fromHistory = false) {
                     while (exercise.series.length <= setIndex) {
                         exercise.series.push({ weight: '', reps: '', prevWeight: '', prevReps: '', sessionWeight: '', sessionReps: '' });
                     }
-
-                    // Aggiorna storico (per colonna Prev) e stato completamento
-                    exercise.series[setIndex].prevWeight = weightVal;
-                    exercise.series[setIndex].prevReps = repsVal;
                     exercise.series[setIndex].completed = true;
 
                     // Aggiorna conteggio totale serie se aumentate dinamicamente
@@ -1199,10 +1248,20 @@ function renderWorkout(routineId, planId, fromHistory = false) {
             const completedSeriesData = [];
             ex.series.forEach(s => {
                 if (s.completed) {
-                    // Capture the actual values entered for the completed series
+                    // Calcola i valori effettivi usati (Sessione > Target Serie > Target Esercizio)
+                    const targetWeight = (s.weight !== undefined && s.weight !== '') ? s.weight : (ex.weight || '');
+                    const targetReps = (s.reps !== undefined && s.reps !== '') ? s.reps : (ex.reps || '');
+                    
+                    const finalWeight = (s.sessionWeight !== undefined && s.sessionWeight !== '') ? s.sessionWeight : targetWeight;
+                    const finalReps = (s.sessionReps !== undefined && s.sessionReps !== '') ? s.sessionReps : targetReps;
+
+                    // Aggiorna Prev per il prossimo allenamento
+                    s.prevWeight = finalWeight;
+                    s.prevReps = finalReps;
+
                     completedSeriesData.push({
-                        weight: s.sessionWeight || s.weight || '', // Use session value, fallback to target
-                        reps: s.sessionReps || s.reps || ''       // Use session value, fallback to target
+                        weight: finalWeight,
+                        reps: finalReps
                     });
                 }
             });

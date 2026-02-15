@@ -306,10 +306,6 @@ body.workout-readonly .workout-timer {
     padding: 2px 5px;
 }
 
-.prev-data.clickable-prev-data:hover {
-    color: var(--primary);
-}
-
 /* History Modal */
 .modal-content {
     max-height: 75vh;
