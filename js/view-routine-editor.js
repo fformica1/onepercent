@@ -6,8 +6,8 @@ function renderExerciseEditorHTML(exercise) {
         const setsCount = parseInt(exercise.sets) || 3;
         for(let i=0; i<setsCount; i++) {
             seriesData.push({
-                reps: (exercise.reps !== undefined && exercise.reps !== null) ? exercise.reps : '',
-                weight: (exercise.weight !== undefined && exercise.weight !== null) ? exercise.weight : ''
+                reps: (exercise.reps !== undefined && exercise.reps !== null && exercise.reps !== '') ? exercise.reps : '0',
+                weight: (exercise.weight !== undefined && exercise.weight !== null && exercise.weight !== '') ? exercise.weight : '0'
             });
         }
     }
@@ -346,7 +346,7 @@ function renderRoutineEditor(routineId, planId, fromHistory = false) {
             selectedNames.forEach(name => {
                 // Imposta 1 serie di default e non copiare lo storico
                 // per avere un esercizio pulito in una nuova routine.
-                const newExercise = { id: Date.now() + Math.random(), name: name, sets: 1, reps: '', rest: '90', weight: '', notes: '', series: [] };
+                const newExercise = { id: Date.now() + Math.random(), name: name, sets: 1, reps: '0', rest: '90', weight: '0', notes: '', series: [] };
 
                 const div = document.createElement('div');
                 div.innerHTML = renderExerciseEditorHTML(newExercise);
@@ -407,8 +407,8 @@ function renderRoutineEditor(routineId, planId, fromHistory = false) {
             const currentSets = container.children.length;
 
             // Copia valori dalla serie precedente
-            let prevWeight = '';
-            let prevReps = '';
+            let prevWeight = '0';
+            let prevReps = '0';
             if (currentSets > 0) {
                 const lastRow = container.lastElementChild;
                 prevWeight = lastRow.querySelector('.set-weight').value;

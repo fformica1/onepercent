@@ -92,7 +92,10 @@ function handleGlobalTick() {
                 SystemNotifier.showRestFinishedNotification({ routineName, nextExerciseName, setInfo, targetInfo });
             }
 
-            scrollToActiveExercise();
+            // Evita lo scroll se l'utente non è nella pagina workout (es. è nella Home o Impostazioni)
+            if (AppState.currentView === 'workout' || AppState.currentView === 'restTimer') {
+                scrollToActiveExercise();
+            }
             _cardToScrollToAfterRest = null;
         }
         updateRestDisplay();
@@ -645,8 +648,8 @@ function renderWorkout(routineId, planId, fromHistory = false) {
             const hasTargetReps = (s.reps !== undefined && s.reps !== '');
             
             // Se la serie specifica non ha un target, usa il default dell'esercizio (ex.weight/ex.reps)
-            const targetWeight = hasTargetWeight ? s.weight : (ex.weight || '');
-            const targetReps = hasTargetReps ? s.reps : (ex.reps || '');
+            const targetWeight = hasTargetWeight ? s.weight : (ex.weight || '0');
+            const targetReps = hasTargetReps ? s.reps : (ex.reps || '0');
             
             const prevData = (s.prevWeight) ? `${s.prevWeight}kg x ${s.prevReps}` : "-";
 
@@ -1016,7 +1019,7 @@ function renderWorkout(routineId, planId, fromHistory = false) {
         if (e.target.classList.contains('btn-add-set')) {
             const currentSets = container.children.length;
             // Copia valori ultima serie
-            let prevWeight = '', prevReps = '';
+            let prevWeight = '0', prevReps = '0';
             if (currentSets > 0) {
                 const lastRow = container.lastElementChild;
                 // Prendi solo il value (che ora contiene anche il target se presente)
@@ -1048,12 +1051,12 @@ function renderWorkout(routineId, planId, fromHistory = false) {
                 while (exercise.series.length < currentSets) exercise.series.push({});
                 
                 // Recupera i valori target (standard) dell'ultima serie per copiarli
-                let defaultWeight = '';
-                let defaultReps = '';
+                let defaultWeight = '0';
+                let defaultReps = '0';
                 if (exercise.series.length > 0) {
                     const lastSeries = exercise.series[exercise.series.length - 1];
-                    defaultWeight = lastSeries.weight || '';
-                    defaultReps = lastSeries.reps || '';
+                    defaultWeight = lastSeries.weight || '0';
+                    defaultReps = lastSeries.reps || '0';
                 }
 
                 // Aggiungi nuova serie

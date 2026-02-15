@@ -130,8 +130,9 @@ function getDefaultPlans(allExercises) {
             name: exName,
             muscleGroup: exGroup,
             sets: sets,
-            reps: String(reps),
+            reps: String(reps || '0'),
             rest: rest,
+            weight: '0',
             notes: '',
             series: [],
             history: []

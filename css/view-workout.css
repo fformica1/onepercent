@@ -67,6 +67,7 @@ body.workout-readonly .workout-timer {
 .workout-header.rest-finished .workout-routine-name,
 .workout-header.rest-finished .workout-timer,
 .workout-header.rest-finished .rest-timer-large,
+.workout-header.rest-finished .rest-timer-total,
 .workout-header.rest-finished .back-btn {
     color: #ffffff;
 }
