@@ -30,7 +30,14 @@
             </button>
         </div>
         <h1>1%</h1>
-        <div id="header-spacer" style="width: 32px;"></div>
+        <div class="header-right-actions">
+            <button id="btn-import-plan" class="header-icon-btn">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+            </button>
+            <button id="btn-export-plan" class="header-icon-btn">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+            </button>
+        </div>
     </header>
 
     <main id="app">
@@ -95,6 +102,9 @@
     <button id="fab-action" class="fab" title="Aggiungi">
         <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 0 24 24" width="24px" fill="currentColor"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
     </button>
+
+    <!-- Hidden Input for Plan Import -->
+    <input type="file" id="import-plan-input" accept=".json" style="display: none;">
 
     <script src="js/state.js"></script>
     <script src="js/utils.js"></script>

@@ -185,4 +185,21 @@ document.addEventListener('DOMContentLoaded', () => {
             touchstartY = 0;
         }, { passive: true });
     }
+
+    // --- GESTIONE IMPORT/EXPORT PIANI ---
+    const btnImportPlan = document.getElementById('btn-import-plan');
+    const btnExportPlan = document.getElementById('btn-export-plan');
+    const inputImportPlan = document.getElementById('import-plan-input');
+
+    if (btnImportPlan && inputImportPlan) {
+        btnImportPlan.addEventListener('click', () => inputImportPlan.click());
+        inputImportPlan.addEventListener('change', (e) => {
+            importPlanFromFile(e.target.files[0]);
+            e.target.value = ''; // Reset input
+        });
+    }
+
+    if (btnExportPlan) {
+        btnExportPlan.addEventListener('click', () => exportCurrentPlan());
+    }
 });

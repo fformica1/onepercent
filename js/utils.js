@@ -42,6 +42,18 @@ function switchView(viewName) {
         target.classList.add('active');
         AppState.currentView = viewName;
     }
+
+    // Gestione bottoni header Import/Export
+    const btnImport = document.getElementById('btn-import-plan');
+    const btnExport = document.getElementById('btn-export-plan');
+    if (btnImport) btnImport.classList.remove('visible');
+    if (btnExport) btnExport.classList.remove('visible');
+
+    if (viewName === 'plans' && btnImport) {
+        btnImport.classList.add('visible');
+    } else if (viewName === 'routines' && btnExport) {
+        btnExport.classList.add('visible');
+    }
 }
 
 // --- GESTIONE TEMA ---
@@ -247,6 +259,92 @@ function showConfirmationModal(title, message, onConfirm, confirmText = "Elimina
     newCancelBtn.addEventListener('click', () => { closeModal('confirm-modal'); });
     
     openModal('confirm-modal');
+}
+
+// --- IMPORT/EXPORT PIANI ---
+function exportCurrentPlan() {
+    // Recupera l'ID del piano corrente dallo stato della history
+    const state = history.state;
+    if (!state || !state.planId) {
+        showAlertModal("Errore", "Impossibile identificare il piano da esportare.");
+        return;
+    }
+
+    const plan = AppState.plans.find(p => p.id === state.planId);
+    if (!plan) {
+        showAlertModal("Errore", "Piano non trovato.");
+        return;
+    }
+
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(plan, null, 2));
+    const downloadAnchorNode = document.createElement('a');
+    downloadAnchorNode.setAttribute("href", dataStr);
+    downloadAnchorNode.setAttribute("download", `${plan.name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.json`);
+    document.body.appendChild(downloadAnchorNode);
+    downloadAnchorNode.click();
+    downloadAnchorNode.remove();
+}
+
+function importPlanFromFile(file) {
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        try {
+            const importedPlan = JSON.parse(e.target.result);
+            
+            if (!importedPlan.name || !Array.isArray(importedPlan.routines)) {
+                throw new Error("Formato file non valido.");
+            }
+
+            showConfirmationModal(
+                "Importa Piano",
+                `Vuoi importare il piano "${importedPlan.name}"?`,
+                () => {
+                    try {
+                        importedPlan.id = Date.now();
+
+                        importedPlan.routines.forEach(routine => {
+                            if (routine.exercises) {
+                                routine.exercises.forEach(ex => {
+                                    const exists = AppState.exercises.some(existing => existing.name.toLowerCase() === ex.name.toLowerCase());
+                                    if (!exists) {
+                                        AppState.exercises.push({
+                                            id: Date.now() + Math.random(),
+                                            name: ex.name,
+                                            muscleGroup: ex.muscleGroup || 'Altro'
+                                        });
+                                    }
+                                });
+                            }
+                        });
+
+                        AppState.plans.push(importedPlan);
+                        saveAppData();
+                        
+                        if (AppState.currentView === 'plans') {
+                            if (typeof renderPlans === 'function') {
+                                renderPlans(true);
+                            } else {
+                                window.location.reload();
+                            }
+                        }
+                        
+                        showAlertModal("Successo", `Piano "${importedPlan.name}" importato.`);
+                    } catch (err) {
+                        console.error(err);
+                        showAlertModal("Errore", "Errore durante il salvataggio del piano.");
+                    }
+                },
+                "Importa"
+            );
+
+        } catch (err) {
+            console.error(err);
+            showAlertModal("Errore", "File non valido.");
+        }
+    };
+    reader.readAsText(file);
 }
 
 // --- MODALE AVVISO GLOBALE ---

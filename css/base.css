@@ -83,6 +83,7 @@
 
 html {
     overscroll-behavior-y: none;
+    overscroll-behavior-x: contain; /* Blocca la navigazione con swipe orizzontale */
 }
 
 body {
@@ -92,6 +93,7 @@ body {
     line-height: 1.6;
     transition: background-color 0.3s, color 0.3s;
     overscroll-behavior-y: none; /* Previene il rimbalzo della pagina */
+    overscroll-behavior-x: contain; /* Blocca la navigazione con swipe orizzontale */
 
     /* Rende il testo non selezionabile per un feeling più "native" */
     -webkit-user-select: none; /* Safari */
@@ -125,6 +127,15 @@ header h1 {
 }
 
 .header-left-actions {
+    position: relative;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.header-right-actions {
     position: relative;
     width: 40px;
     height: 40px;
