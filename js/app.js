@@ -161,7 +161,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 touchstartX = 0;
                 touchstartY = 0;
             }
-        }, { passive: true });
+        }, { passive: false });
 
         document.addEventListener('touchmove', (e) => {
             if (touchstartX === 0) return;
@@ -178,5 +178,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 e.preventDefault();
             }
         }, { passive: false });
+
+        // Reset delle variabili al termine del tocco per evitare conflitti
+        document.addEventListener('touchend', () => {
+            touchstartX = 0;
+            touchstartY = 0;
+        }, { passive: true });
     }
 });

@@ -108,6 +108,11 @@ function handleGlobalTick() {
 
     // 3. Aggiorna Notifica Persistente
     updateSystemNotification();
+
+    // Sicurezza: Se l'audio context viene sospeso dal sistema, tenta di riattivarlo ad ogni tick
+    if (workoutAudioCtx && workoutAudioCtx.state === 'suspended') {
+        workoutAudioCtx.resume().catch(() => {});
+    }
 }
 
 let currentRestSeconds = 0;
@@ -332,8 +337,6 @@ function playTimerFinishedSound() {
 }
 
 function enableKeepAlive() {
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-
     if (!workoutAudioCtx) {
         // 'playback' latency hint suggerisce al browser che vogliamo riprodurre audio continuo (come un player musicale)
         const AudioContext = window.AudioContext || window.webkitAudioContext;
@@ -346,35 +349,20 @@ function enableKeepAlive() {
     if (keepAliveOscillator) return; // Già attivo
 
     try {
-        if (isIOS) {
-            // iOS: Usa un buffer con rumore bianco impercettibile invece di silenzio puro.
-            // Il silenzio puro (0) viene spesso ignorato da iOS in background.
-            const bufferSize = workoutAudioCtx.sampleRate; // 1 secondo
-            const noiseBuffer = workoutAudioCtx.createBuffer(1, bufferSize, workoutAudioCtx.sampleRate);
-            const output = noiseBuffer.getChannelData(0);
-            for (let i = 0; i < bufferSize; i++) {
-                // Rumore casuale bassissimo (non zero, ma inudibile)
-                output[i] = (Math.random() * 2 - 1) * 0.0001;
-            }
-
-            const source = workoutAudioCtx.createBufferSource();
-            source.buffer = noiseBuffer;
-            source.loop = true;
-            source.connect(workoutAudioCtx.destination);
-            source.start();
-            keepAliveOscillator = source;
-        } else {
-            // Android e altri: Mantiene il metodo esistente con oscillatore che funziona correttamente.
-            const oscillator = workoutAudioCtx.createOscillator();
-            const gain = workoutAudioCtx.createGain();
-            oscillator.type = 'sine';
-            oscillator.frequency.setValueAtTime(20, workoutAudioCtx.currentTime); 
-            gain.gain.setValueAtTime(0.001, workoutAudioCtx.currentTime); 
-            oscillator.connect(gain);
-            gain.connect(workoutAudioCtx.destination);
-            oscillator.start();
-            keepAliveOscillator = oscillator;
-        }
+        // Metodo Oscillatore Unificato (Funziona su Android e iOS con latencyHint: 'playback')
+        // Genera un tono continuo a 20Hz (limite udibile basso) a volume bassissimo.
+        // Questo viene interpretato come "riproduzione attiva" dal sistema operativo.
+        const oscillator = workoutAudioCtx.createOscillator();
+        const gain = workoutAudioCtx.createGain();
+        
+        oscillator.type = 'sine';
+        oscillator.frequency.setValueAtTime(20, workoutAudioCtx.currentTime); 
+        gain.gain.setValueAtTime(0.001, workoutAudioCtx.currentTime); 
+        
+        oscillator.connect(gain);
+        gain.connect(workoutAudioCtx.destination);
+        oscillator.start();
+        keepAliveOscillator = oscillator;
     } catch (e) {
         console.error("Failed to enable Web Audio keep-alive:", e);
     }
