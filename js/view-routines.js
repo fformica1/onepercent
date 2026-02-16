@@ -109,7 +109,7 @@ function renderRoutines(plan, fromHistory = false) {
                         () => {
                             plan.routines = plan.routines.filter(r => r.id !== routineId);
                             saveAppData();
-                            renderRoutines(plan);
+                            renderRoutines(plan, true);
                         }
                     );
                 }
@@ -260,7 +260,7 @@ function renderRoutines(plan, fromHistory = false) {
             routine.name = name;
             saveAppData();
             closeModal('edit-routine-modal-plan');
-            renderRoutines(plan);
+            renderRoutines(plan, true);
         }
     };
 
@@ -285,7 +285,7 @@ function renderRoutines(plan, fromHistory = false) {
             plan.routines.push(newRoutine);
             saveAppData();
             closeModal('create-routine-modal');
-            renderRoutines(plan);
+            renderRoutines(plan, true);
         }
     };
 

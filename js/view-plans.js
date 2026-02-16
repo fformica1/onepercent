@@ -138,7 +138,7 @@ function renderPlans(fromHistory = false) {
                                 }
                             }
                             saveAppData();
-                            renderPlans();
+                            renderPlans(true);
                         }
                     }, "Elimina"
                 );
@@ -191,7 +191,7 @@ function renderPlans(fromHistory = false) {
             plan.name = name;
             saveAppData();
             closeModal('edit-plan-modal');
-            renderPlans();
+            renderPlans(true);
         }
     };
 
@@ -219,7 +219,7 @@ function renderPlans(fromHistory = false) {
             }
             saveAppData();
             closeModal('create-plan-modal');
-            renderPlans();
+            renderPlans(true);
         }
     };
 
