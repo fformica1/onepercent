@@ -144,22 +144,37 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (isIOS) {
         let touchstartX = 0;
+        let touchstartY = 0;
+
         document.addEventListener('touchstart', (e) => {
             const screenWidth = window.innerWidth;
-            const edgeThreshold = 40; // Area di attivazione dal bordo destro
-            const startX = e.changedTouches[0].clientX;
+            // Aumentiamo la soglia per catturare meglio il gesto (15% dello schermo o min 50px)
+            const edgeThreshold = Math.max(50, screenWidth * 0.15);
+            const t = e.changedTouches[0];
+            const startX = t.clientX;
+            const startY = t.clientY;
             
             if (startX > screenWidth - edgeThreshold) {
                 touchstartX = startX;
+                touchstartY = startY;
             } else {
                 touchstartX = 0;
+                touchstartY = 0;
             }
         }, { passive: true });
 
         document.addEventListener('touchmove', (e) => {
             if (touchstartX === 0) return;
-            const currentX = e.changedTouches[0].clientX;
-            if (currentX < touchstartX) {
+            
+            const t = e.changedTouches[0];
+            const currentX = t.clientX;
+            const currentY = t.clientY;
+            
+            const xDiff = touchstartX - currentX;
+            const yDiff = Math.abs(currentY - touchstartY);
+
+            // Blocca se movimento verso sinistra (xDiff > 0) e prevalentemente orizzontale
+            if (xDiff > 0 && xDiff > yDiff) {
                 e.preventDefault();
             }
         }, { passive: false });

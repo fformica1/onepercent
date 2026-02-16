@@ -335,7 +335,9 @@ function enableKeepAlive() {
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
 
     if (!workoutAudioCtx) {
-        workoutAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        // 'playback' latency hint suggerisce al browser che vogliamo riprodurre audio continuo (come un player musicale)
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        workoutAudioCtx = new AudioContext({ latencyHint: 'playback' });
     }
     if (workoutAudioCtx.state === 'suspended') {
         workoutAudioCtx.resume().catch(() => {});
@@ -345,10 +347,18 @@ function enableKeepAlive() {
 
     try {
         if (isIOS) {
-            // iOS: Usa il metodo più robusto con buffer audio silenzioso per mantenere l'app attiva.
-            const silentBuffer = workoutAudioCtx.createBuffer(1, 1, 22050);
+            // iOS: Usa un buffer con rumore bianco impercettibile invece di silenzio puro.
+            // Il silenzio puro (0) viene spesso ignorato da iOS in background.
+            const bufferSize = workoutAudioCtx.sampleRate; // 1 secondo
+            const noiseBuffer = workoutAudioCtx.createBuffer(1, bufferSize, workoutAudioCtx.sampleRate);
+            const output = noiseBuffer.getChannelData(0);
+            for (let i = 0; i < bufferSize; i++) {
+                // Rumore casuale bassissimo (non zero, ma inudibile)
+                output[i] = (Math.random() * 2 - 1) * 0.0001;
+            }
+
             const source = workoutAudioCtx.createBufferSource();
-            source.buffer = silentBuffer;
+            source.buffer = noiseBuffer;
             source.loop = true;
             source.connect(workoutAudioCtx.destination);
             source.start();
@@ -385,7 +395,8 @@ function startRestTimer(seconds, nextCardToFocus = null, showFullscreen = true, 
 
     // Inizializza/Sblocca AudioContext su interazione utente
     if (!workoutAudioCtx) {
-        workoutAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        workoutAudioCtx = new AudioContext({ latencyHint: 'playback' });
     }
     if (workoutAudioCtx.state === 'suspended') {
         workoutAudioCtx.resume();
@@ -821,6 +832,15 @@ function renderWorkout(routineId, planId, fromHistory = false) {
             renderExerciseHistoryModal(exerciseId, routine);
         }
     });
+
+    // iOS Audio Unlocker: Assicura che l'AudioContext sia attivo su qualsiasi interazione
+    const unlockAudio = () => {
+        if (workoutAudioCtx && workoutAudioCtx.state === 'suspended') {
+            workoutAudioCtx.resume().catch(() => {});
+        }
+    };
+    if (header) header.addEventListener('touchstart', unlockAudio, { passive: true });
+    exercisesArea.addEventListener('touchstart', unlockAudio, { passive: true });
 
     // Gestione click pulsante modifica routine in corso
     const editRoutineBtn = document.getElementById('btn-edit-active-routine');
