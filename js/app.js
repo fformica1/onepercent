@@ -136,4 +136,32 @@ document.addEventListener('DOMContentLoaded', () => {
             // Il blocco può fallire su alcuni dispositivi o se non in fullscreen, ignoriamo l'errore
         });
     }
+
+    // --- GESTIONE SWIPE PER NAVIGAZIONE (SOLO iOS) ---
+    // Disabilita la gesture "avanti" (swipe da destra) su iOS, ma mantiene quella "indietro".
+    // Su Android la gesture "indietro" è spesso sul lato destro, quindi non applichiamo questo blocco.
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+
+    if (isIOS) {
+        let touchstartX = 0;
+        document.addEventListener('touchstart', (e) => {
+            const screenWidth = window.innerWidth;
+            const edgeThreshold = 40; // Area di attivazione dal bordo destro
+            const startX = e.changedTouches[0].clientX;
+            
+            if (startX > screenWidth - edgeThreshold) {
+                touchstartX = startX;
+            } else {
+                touchstartX = 0;
+            }
+        }, { passive: true });
+
+        document.addEventListener('touchmove', (e) => {
+            if (touchstartX === 0) return;
+            const currentX = e.changedTouches[0].clientX;
+            if (currentX < touchstartX) {
+                e.preventDefault();
+            }
+        }, { passive: false });
+    }
 });

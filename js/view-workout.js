@@ -332,26 +332,41 @@ function playTimerFinishedSound() {
 }
 
 function enableKeepAlive() {
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+
     if (!workoutAudioCtx) {
         workoutAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
     }
     if (workoutAudioCtx.state === 'suspended') {
         workoutAudioCtx.resume().catch(() => {});
     }
+    
+    if (keepAliveOscillator) return; // Già attivo
 
-    if (!keepAliveOscillator) {
-        try {
-            keepAliveOscillator = workoutAudioCtx.createOscillator();
+    try {
+        if (isIOS) {
+            // iOS: Usa il metodo più robusto con buffer audio silenzioso per mantenere l'app attiva.
+            const silentBuffer = workoutAudioCtx.createBuffer(1, 1, 22050);
+            const source = workoutAudioCtx.createBufferSource();
+            source.buffer = silentBuffer;
+            source.loop = true;
+            source.connect(workoutAudioCtx.destination);
+            source.start();
+            keepAliveOscillator = source;
+        } else {
+            // Android e altri: Mantiene il metodo esistente con oscillatore che funziona correttamente.
+            const oscillator = workoutAudioCtx.createOscillator();
             const gain = workoutAudioCtx.createGain();
-            
-            keepAliveOscillator.type = 'sine';
-            keepAliveOscillator.frequency.setValueAtTime(20, workoutAudioCtx.currentTime); 
+            oscillator.type = 'sine';
+            oscillator.frequency.setValueAtTime(20, workoutAudioCtx.currentTime); 
             gain.gain.setValueAtTime(0.001, workoutAudioCtx.currentTime); 
-            
-            keepAliveOscillator.connect(gain);
+            oscillator.connect(gain);
             gain.connect(workoutAudioCtx.destination);
-            keepAliveOscillator.start();
-        } catch (e) { console.error(e); }
+            oscillator.start();
+            keepAliveOscillator = oscillator;
+        }
+    } catch (e) {
+        console.error("Failed to enable Web Audio keep-alive:", e);
     }
 }
 
@@ -603,6 +618,7 @@ function renderWorkout(routineId, planId, fromHistory = false) {
         if (timerWorker) timerWorker.postMessage('stop');
         disableKeepAlive();
         currentRestSeconds = 0;
+        restEndTime = 0;
         currentWorkoutSession = null;
         localStorage.removeItem('active_workout_session');
         initialRestSeconds = firstRest;
@@ -1234,8 +1250,6 @@ function renderWorkout(routineId, planId, fromHistory = false) {
         deactivateWakeLock();
         disableKeepAlive();
         if (typeof SystemNotifier !== 'undefined') SystemNotifier.clearWorkoutNotification();
-        // Chiudi la modale
-        closeModal('end-workout-modal');
 
         const workoutDuration = currentWorkoutSession && currentWorkoutSession.startTime ? Math.floor((Date.now() - currentWorkoutSession.startTime) / 1000) : 0; // in seconds
         const workoutDate = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
@@ -1244,6 +1258,7 @@ function renderWorkout(routineId, planId, fromHistory = false) {
         // I dati sono già salvati "on the fly". Puliamo solo lo stato.
         if (timerWorker) timerWorker.postMessage('stop');
         currentWorkoutSession = null;
+        restEndTime = 0;
 
         let hasAnyCompletedSeries = false;
         // Save historical data for each exercise in the routine
@@ -1303,15 +1318,20 @@ function renderWorkout(routineId, planId, fromHistory = false) {
         saveAppData();
 
         localStorage.removeItem('active_workout_session');
-        history.back(); // Torna alla Home pulita
+        
+        // FIX iOS: Se la modale è nella history, torna indietro di 2 step (Modale -> Workout -> Home)
+        if (window.history.state && window.history.state.modalOpen === 'end-workout-modal') {
+            history.go(-2);
+        } else {
+            closeModal('end-workout-modal'); // Pulisce solo visivamente se non è in history
+            history.back();
+        }
     };
 
     document.getElementById('btn-discard-workout').onclick = () => {
         deactivateWakeLock();
         disableKeepAlive();
         if (typeof SystemNotifier !== 'undefined') SystemNotifier.clearWorkoutNotification();
-        // Chiudi la modale
-        closeModal('end-workout-modal');
 
         // Ripristina lo stato precedente (annulla modifiche sessione)
         if (currentWorkoutSession && currentWorkoutSession.originalRoutineJSON) {
@@ -1327,8 +1347,16 @@ function renderWorkout(routineId, planId, fromHistory = false) {
         }
         if (timerWorker) timerWorker.postMessage('stop');
         currentWorkoutSession = null;
+        restEndTime = 0;
         localStorage.removeItem('active_workout_session');
-        history.back(); // Torna alla Home pulita
+        
+        // FIX iOS: Se la modale è nella history, torna indietro di 2 step (Modale -> Workout -> Home)
+        if (window.history.state && window.history.state.modalOpen === 'end-workout-modal') {
+            history.go(-2);
+        } else {
+            closeModal('end-workout-modal'); // Pulisce solo visivamente se non è in history
+            history.back();
+        }
     };
 
     // Rest Timer Listeners
