@@ -113,35 +113,33 @@ const SystemNotifier = {
     },
 
     /**
-     * Mostra una notifica singola per iOS (e altri non-Android) quando il recupero è finito.
-     * @param {object} options
-     * @param {string} options.routineName - Es. "Sessione A"
-     * @param {string} options.nextExerciseName - Es. "Panca Piana"
-     * @param {string} options.setInfo - Es. "1/3"
-     * @param {string} options.targetInfo - Es. "100kg x 8"
+     * Schedules a notification for when the rest timer finishes. (Primarily for iOS)
+     * This delegates the timing to the Service Worker for background reliability.
+     * @param {object} options - Notification content and timing.
      */
-    showRestFinishedNotification({ routineName, nextExerciseName, setInfo, targetInfo }) {
-        // Se l'app è in primo piano, evita la notifica di sistema (l'utente vede già il timer verde)
-        if (document.visibilityState === 'visible') return;
-
-        if (Notification.permission !== 'granted' || this.isAndroid || !('serviceWorker' in navigator)) {
+    scheduleRestFinishedNotification({ endTime, routineName, nextExerciseName, setInfo, targetInfo }) {
+        const notificationsEnabled = localStorage.getItem('notifications_enabled') !== 'false';
+        if (!notificationsEnabled || Notification.permission !== 'granted' || !this.isIOS || !('serviceWorker' in navigator) || !navigator.serviceWorker.controller) {
             return;
         }
 
-        const title = routineName;
-        let body = "Recupero terminato\nAllenamento completato!";
-        if (nextExerciseName) {
-            body = `Recupero terminato\n➜ ${setInfo ? setInfo + ' ' : ''}${nextExerciseName}${targetInfo ? ': ' + targetInfo : ''}`;
-        }
-        
-        navigator.serviceWorker.ready.then(registration => {
-            registration.showNotification(title, { 
-                body, 
-                icon: this.getAdaptiveIcon(),
-                badge: './notification-icon.png',
-                tag: 'onepercent-rest-finished', 
-                renotify: true 
-            });
+        navigator.serviceWorker.controller.postMessage({
+            type: 'SCHEDULE_IOS_REST_NOTIFICATION',
+            endTime,
+            routineName,
+            nextExerciseName,
+            setInfo,
+            targetInfo
         });
+    },
+
+    /**
+     * Cancels any pending scheduled rest notification. (Primarily for iOS)
+     */
+    cancelScheduledRestNotification() {
+        if (!this.isIOS || !('serviceWorker' in navigator) || !navigator.serviceWorker.controller) {
+            return;
+        }
+        navigator.serviceWorker.controller.postMessage({ type: 'CANCEL_IOS_REST_NOTIFICATION' });
     }
 };

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'one-percent-v93';
+const CACHE_NAME = 'one-percent-v94';
 const ASSETS_TO_CACHE = [
     './',
     './index.html',
@@ -103,10 +103,51 @@ self.addEventListener('fetch', (event) => {
     );
 });
 
+// Tieni traccia del timer per poterlo annullare
+let restTimerTimeout = null;
+
 // Gestione Messaggi dal Client
 self.addEventListener('message', (event) => {
     if (event.data && event.data.type === 'SKIP_WAITING') {
         self.skipWaiting();
+    }
+
+    // Gestisce la pianificazione della notifica di fine recupero per iOS
+    if (event.data && event.data.type === 'SCHEDULE_IOS_REST_NOTIFICATION') {
+        // Annulla qualsiasi timer precedente
+        if (restTimerTimeout) {
+            clearTimeout(restTimerTimeout);
+        }
+
+        const { endTime, routineName, nextExerciseName, setInfo, targetInfo } = event.data;
+        const delay = endTime - Date.now();
+
+        if (delay > 0) {
+            restTimerTimeout = setTimeout(() => {
+                const title = routineName;
+                let body = "Recupero terminato\nAllenamento completato!";
+                if (nextExerciseName) {
+                    body = `Recupero terminato\n➜ ${setInfo ? setInfo + ' ' : ''}${nextExerciseName}${targetInfo ? ': ' + targetInfo : ''}`;
+                }
+
+                self.registration.showNotification(title, {
+                    body: body,
+                    icon: './w-notification-icon.png', // Icona adatta a sfondi chiari/scuri di sistema
+                    badge: './favicon.png',
+                    tag: 'onepercent-rest-finished', // Sostituisce la notifica precedente dello stesso tipo
+                    renotify: true // Avvisa l'utente anche se una notifica con lo stesso tag è già presente
+                });
+                restTimerTimeout = null; // Pulisce il riferimento al timer dopo l'esecuzione
+            }, delay);
+        }
+    }
+
+    // Annulla una notifica di recupero pianificata
+    if (event.data && event.data.type === 'CANCEL_IOS_REST_NOTIFICATION') {
+        if (restTimerTimeout) {
+            clearTimeout(restTimerTimeout);
+            restTimerTimeout = null;
+        }
     }
 });
 

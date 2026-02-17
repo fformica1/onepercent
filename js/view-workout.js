@@ -58,40 +58,6 @@ function handleGlobalTick() {
                 saveWorkoutSession();
             }
 
-            // --- LOGICA NOTIFICA FINE RECUPERO ---
-            const notificationsEnabled = localStorage.getItem('notifications_enabled') !== 'false';
-            if (notificationsEnabled && typeof SystemNotifier !== 'undefined') {
-                const routineNameEl = document.querySelector('.workout-routine-name');
-                const routineName = routineNameEl ? routineNameEl.textContent : 'Allenamento';
-                
-                let nextExerciseName = null;
-                let setInfo = '';
-                let targetInfo = '';
-
-                if (_cardToScrollToAfterRest) {
-                    const nextExerciseNameEl = _cardToScrollToAfterRest.querySelector('h3');
-                    if (nextExerciseNameEl) nextExerciseName = nextExerciseNameEl.textContent;
-
-                    const rows = Array.from(_cardToScrollToAfterRest.querySelectorAll('.workout-set-row'));
-                    const totalSets = rows.length;
-                    const nextSetIndex = rows.findIndex(row => !row.querySelector('.workout-checkbox').checked);
-                    
-                    if (nextSetIndex !== -1) {
-                        const row = rows[nextSetIndex];
-                        setInfo = `${nextSetIndex + 1}/${totalSets}`;
-                        
-                        const wInput = row.querySelector('.input-weight');
-                        const rInput = row.querySelector('.input-reps');
-                        const weight = wInput.value || wInput.placeholder || '-';
-                        const reps = rInput.value || rInput.placeholder || '-';
-                        
-                        targetInfo = `${weight}kg x ${reps}`;
-                    }
-                }
-                
-                SystemNotifier.showRestFinishedNotification({ routineName, nextExerciseName, setInfo, targetInfo });
-            }
-
             // Evita lo scroll se l'utente non è nella pagina workout (es. è nella Home o Impostazioni)
             if (AppState.currentView === 'workout' || AppState.currentView === 'restTimer') {
                 scrollToActiveExercise();
@@ -252,14 +218,14 @@ function updateSystemNotification() {
     });
 }
 
-function getNextExerciseInfo() {
+function getNextExerciseInfo(overrideCard = null) {
     // Determina il prossimo esercizio
     let nextExerciseName = '';
     let setInfo = '';
     let targetInfo = '';
     
-    // 1. Se c'è un recupero attivo, usiamo la card target del recupero
-    let targetCard = _cardToScrollToAfterRest;
+    // 1. Usa la card passata come override, altrimenti quella del recupero
+    let targetCard = overrideCard || _cardToScrollToAfterRest;
     
     // 2. Se non c'è recupero (o target nullo), cerchiamo il primo esercizio incompleto
     if (!targetCard) {
@@ -424,6 +390,20 @@ function startRestTimer(seconds, nextCardToFocus = null, showFullscreen = true, 
         saveWorkoutSession();
     }
 
+    // Schedule notification for iOS
+    if (typeof SystemNotifier !== 'undefined') {
+        const routineNameEl = document.querySelector('.workout-routine-name');
+        const routineName = routineNameEl ? routineNameEl.textContent : 'Allenamento';
+        const nextExerciseInfo = getNextExerciseInfo(nextCardToFocus); // Pass the card to get correct info
+        SystemNotifier.scheduleRestFinishedNotification({
+            endTime: restEndTime,
+            routineName: routineName,
+            nextExerciseName: nextExerciseInfo.name,
+            setInfo: nextExerciseInfo.setInfo,
+            targetInfo: nextExerciseInfo.targetInfo
+        });
+    }
+
     currentRestSeconds = seconds;
     updateRestDisplay();
     
@@ -438,6 +418,9 @@ function startRestTimer(seconds, nextCardToFocus = null, showFullscreen = true, 
 
 function adjustRestTimer(seconds) {
     if (restEndTime <= 0) return;
+
+    // Cancel previous notification before rescheduling
+    if (typeof SystemNotifier !== 'undefined') SystemNotifier.cancelScheduledRestNotification();
 
     restEndTime += (seconds * 1000);
     initialRestSeconds += seconds;
@@ -465,6 +448,21 @@ function adjustRestTimer(seconds) {
             saveWorkoutSession();
         }
     }
+
+    // Reschedule notification for iOS
+    if (typeof SystemNotifier !== 'undefined') {
+        const routineNameEl = document.querySelector('.workout-routine-name');
+        const routineName = routineNameEl ? routineNameEl.textContent : 'Allenamento';
+        const nextExerciseInfo = getNextExerciseInfo();
+        SystemNotifier.scheduleRestFinishedNotification({
+            endTime: restEndTime,
+            routineName: routineName,
+            nextExerciseName: nextExerciseInfo.name,
+            setInfo: nextExerciseInfo.setInfo,
+            targetInfo: nextExerciseInfo.targetInfo
+        });
+    }
+
     updateRestDisplay();
     if (AppState.currentView === 'restTimer' && typeof RestTimerView !== 'undefined') {
         RestTimerView.update(currentRestSeconds, initialRestSeconds);
@@ -473,6 +471,7 @@ function adjustRestTimer(seconds) {
 
 function skipRestTimer() {
     if (restEndTime <= 0) return;
+    if (typeof SystemNotifier !== 'undefined') SystemNotifier.cancelScheduledRestNotification();
 
     scrollToActiveExercise();
     _cardToScrollToAfterRest = null;
@@ -1274,6 +1273,7 @@ function renderWorkout(routineId, planId, fromHistory = false) {
     };
 
     document.getElementById('btn-save-workout').onclick = () => {
+        if (typeof SystemNotifier !== 'undefined') SystemNotifier.cancelScheduledRestNotification();
         deactivateWakeLock();
         disableKeepAlive();
         if (typeof SystemNotifier !== 'undefined') SystemNotifier.clearWorkoutNotification();
@@ -1356,6 +1356,7 @@ function renderWorkout(routineId, planId, fromHistory = false) {
     };
 
     document.getElementById('btn-discard-workout').onclick = () => {
+        if (typeof SystemNotifier !== 'undefined') SystemNotifier.cancelScheduledRestNotification();
         deactivateWakeLock();
         disableKeepAlive();
         if (typeof SystemNotifier !== 'undefined') SystemNotifier.clearWorkoutNotification();
