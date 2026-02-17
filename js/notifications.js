@@ -110,36 +110,5 @@ const SystemNotifier = {
                 ongoing: true      // Rende la notifica persistente (non cancellabile con swipe su Android)
             });
         });
-    },
-
-    /**
-     * Schedules a notification for when the rest timer finishes. (Primarily for iOS)
-     * This delegates the timing to the Service Worker for background reliability.
-     * @param {object} options - Notification content and timing.
-     */
-    scheduleRestFinishedNotification({ endTime, routineName, nextExerciseName, setInfo, targetInfo }) {
-        const notificationsEnabled = localStorage.getItem('notifications_enabled') !== 'false';
-        if (!notificationsEnabled || Notification.permission !== 'granted' || !('serviceWorker' in navigator) || !navigator.serviceWorker.controller) {
-            return;
-        }
-
-        navigator.serviceWorker.controller.postMessage({
-            type: 'SCHEDULE_REST_NOTIFICATION',
-            endTime,
-            routineName,
-            nextExerciseName,
-            setInfo,
-            targetInfo
-        });
-    },
-
-    /**
-     * Cancels any pending scheduled rest notification. (Primarily for iOS)
-     */
-    cancelScheduledRestNotification() {
-        if (!('serviceWorker' in navigator) || !navigator.serviceWorker.controller) {
-            return;
-        }
-        navigator.serviceWorker.controller.postMessage({ type: 'CANCEL_REST_NOTIFICATION' });
     }
 };

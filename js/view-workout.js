@@ -197,7 +197,8 @@ function saveWorkoutSession() {
 }
 
 function updateSystemNotification() {
-    if (typeof SystemNotifier === 'undefined') return;
+    // Disabilita completamente le notifiche persistenti su iOS
+    if (typeof SystemNotifier === 'undefined' || SystemNotifier.isIOS) return;
     
     const notificationsEnabled = localStorage.getItem('notifications_enabled') !== 'false';
     if (!notificationsEnabled) return;
@@ -390,20 +391,6 @@ function startRestTimer(seconds, nextCardToFocus = null, showFullscreen = true, 
         saveWorkoutSession();
     }
 
-    // Schedule notification for iOS
-    if (typeof SystemNotifier !== 'undefined') {
-        const routineNameEl = document.querySelector('.workout-routine-name');
-        const routineName = routineNameEl ? routineNameEl.textContent : 'Allenamento';
-        const nextExerciseInfo = getNextExerciseInfo(nextCardToFocus); // Pass the card to get correct info
-        SystemNotifier.scheduleRestFinishedNotification({
-            endTime: restEndTime,
-            routineName: routineName,
-            nextExerciseName: nextExerciseInfo.name,
-            setInfo: nextExerciseInfo.setInfo,
-            targetInfo: nextExerciseInfo.targetInfo
-        });
-    }
-
     currentRestSeconds = seconds;
     updateRestDisplay();
     
@@ -418,9 +405,6 @@ function startRestTimer(seconds, nextCardToFocus = null, showFullscreen = true, 
 
 function adjustRestTimer(seconds) {
     if (restEndTime <= 0) return;
-
-    // Cancel previous notification before rescheduling
-    if (typeof SystemNotifier !== 'undefined') SystemNotifier.cancelScheduledRestNotification();
 
     restEndTime += (seconds * 1000);
     initialRestSeconds += seconds;
@@ -449,20 +433,6 @@ function adjustRestTimer(seconds) {
         }
     }
 
-    // Reschedule notification for iOS
-    if (typeof SystemNotifier !== 'undefined') {
-        const routineNameEl = document.querySelector('.workout-routine-name');
-        const routineName = routineNameEl ? routineNameEl.textContent : 'Allenamento';
-        const nextExerciseInfo = getNextExerciseInfo();
-        SystemNotifier.scheduleRestFinishedNotification({
-            endTime: restEndTime,
-            routineName: routineName,
-            nextExerciseName: nextExerciseInfo.name,
-            setInfo: nextExerciseInfo.setInfo,
-            targetInfo: nextExerciseInfo.targetInfo
-        });
-    }
-
     updateRestDisplay();
     if (AppState.currentView === 'restTimer' && typeof RestTimerView !== 'undefined') {
         RestTimerView.update(currentRestSeconds, initialRestSeconds);
@@ -471,7 +441,6 @@ function adjustRestTimer(seconds) {
 
 function skipRestTimer() {
     if (restEndTime <= 0) return;
-    if (typeof SystemNotifier !== 'undefined') SystemNotifier.cancelScheduledRestNotification();
 
     scrollToActiveExercise();
     _cardToScrollToAfterRest = null;
@@ -1273,7 +1242,6 @@ function renderWorkout(routineId, planId, fromHistory = false) {
     };
 
     document.getElementById('btn-save-workout').onclick = () => {
-        if (typeof SystemNotifier !== 'undefined') SystemNotifier.cancelScheduledRestNotification();
         deactivateWakeLock();
         disableKeepAlive();
         if (typeof SystemNotifier !== 'undefined') SystemNotifier.clearWorkoutNotification();
@@ -1356,7 +1324,6 @@ function renderWorkout(routineId, planId, fromHistory = false) {
     };
 
     document.getElementById('btn-discard-workout').onclick = () => {
-        if (typeof SystemNotifier !== 'undefined') SystemNotifier.cancelScheduledRestNotification();
         deactivateWakeLock();
         disableKeepAlive();
         if (typeof SystemNotifier !== 'undefined') SystemNotifier.clearWorkoutNotification();

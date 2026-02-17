@@ -28,7 +28,6 @@ function renderSettings(fromHistory = false) {
     
     const notifEnabled = localStorage.getItem('notifications_enabled') !== 'false';
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-    console.log("Device Check:", navigator.userAgent, "isIOS:", isIOS);
     const bellIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
         <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
@@ -52,6 +51,19 @@ function renderSettings(fromHistory = false) {
         <line x1="3" y1="3" x2="21" y2="21" class="notif-slash ${!fullscreenTimerEnabled ? 'visible' : ''}"></line>
     </svg>`;
 
+    const notifCardHtml = !isIOS ? `
+        <div class="routine-card" id="setting-notif-card">
+            <div>
+                <h3>Notifiche</h3>
+                <small id="notif-status">${notifEnabled ? 'Abilitate' : 'Disabilitate'}</small>
+            </div>
+            <div style="display:flex; align-items:center;">
+                 <button id="btn-notif-icon" class="action-btn">${bellIcon}</button>
+            </div>
+        </div>
+    ` : '';
+
+
     container.innerHTML = `
         <div class="view-header" style="justify-content: center;">
             <h2>Impostazioni</h2>
@@ -66,15 +78,7 @@ function renderSettings(fromHistory = false) {
                      <button id="btn-theme-icon" class="action-btn">${themeIcon}</button>
                 </div>
             </div>
-            <div class="routine-card" id="setting-notif-card">
-                <div>
-                    <h3>Notifiche</h3>
-                    <small id="notif-status">${notifEnabled ? 'Abilitate' : 'Disabilitate'}</small>
-                </div>
-                <div style="display:flex; align-items:center;">
-                     <button id="btn-notif-icon" class="action-btn">${bellIcon}</button>
-                </div>
-            </div>
+            ${notifCardHtml}
             <div class="routine-card" id="setting-weight-card">
                 <div>
                     <h3>Incremento Peso</h3>
@@ -138,46 +142,48 @@ function renderSettings(fromHistory = false) {
         }, 150);
     });
 
-    document.getElementById('setting-notif-card').addEventListener('click', async () => {
-        const notifCard = document.getElementById('setting-notif-card');
-        if (notifCard.dataset.processing) return; // Evita doppi click
-        notifCard.dataset.processing = 'true';
+    if (!isIOS) {
+        document.getElementById('setting-notif-card').addEventListener('click', async () => {
+            const notifCard = document.getElementById('setting-notif-card');
+            if (notifCard.dataset.processing) return; // Evita doppi click
+            notifCard.dataset.processing = 'true';
 
-        try {
-            const currentIsEnabled = localStorage.getItem('notifications_enabled') !== 'false';
-            let newIsEnabled = !currentIsEnabled;
+            try {
+                const currentIsEnabled = localStorage.getItem('notifications_enabled') !== 'false';
+                let newIsEnabled = !currentIsEnabled;
 
-            // Se si sta tentando di ABILITARE, chiedi il permesso prima
-            if (newIsEnabled) {
-                if (typeof SystemNotifier !== 'undefined') {
-                    const permissionGranted = await SystemNotifier.requestPermission();
-                    if (!permissionGranted) {
-                        showAlertModal("Permesso Negato", "Permesso per le notifiche negato. Consenti l'accesso alle notifiche dalle impostazioni di sistema dell'app.");
-                        newIsEnabled = false; // Forza lo stato a rimanere disabilitato
+                // Se si sta tentando di ABILITARE, chiedi il permesso prima
+                if (newIsEnabled) {
+                    if (typeof SystemNotifier !== 'undefined') {
+                        const permissionGranted = await SystemNotifier.requestPermission();
+                        if (!permissionGranted) {
+                            showAlertModal("Permesso Negato", "Permesso per le notifiche negato. Consenti l'accesso alle notifiche dalle impostazioni di sistema dell'app.");
+                            newIsEnabled = false; // Forza lo stato a rimanere disabilitato
+                        }
+                    } else {
+                        console.error("SystemNotifier non caricato.");
                     }
-                } else {
-                    console.error("SystemNotifier non caricato.");
                 }
-            }
 
-            localStorage.setItem('notifications_enabled', String(newIsEnabled));
-            
-            if (!newIsEnabled && typeof SystemNotifier !== 'undefined') {
-                SystemNotifier.clearWorkoutNotification();
+                localStorage.setItem('notifications_enabled', String(newIsEnabled));
+                
+                if (!newIsEnabled && typeof SystemNotifier !== 'undefined') {
+                    SystemNotifier.clearWorkoutNotification();
+                }
+                
+                document.getElementById('notif-status').textContent = newIsEnabled ? 'Abilitate' : 'Disabilitate';
+                const slash = document.querySelector('#btn-notif-icon .notif-slash');
+                if (slash) {
+                    slash.classList.toggle('visible', !newIsEnabled);
+                }
+            } catch (e) {
+                console.error("Errore toggle notifiche:", e);
+                showAlertModal("Errore", "Impossibile modificare le impostazioni delle notifiche.");
+            } finally {
+                delete notifCard.dataset.processing;
             }
-            
-            document.getElementById('notif-status').textContent = newIsEnabled ? 'Abilitate' : 'Disabilitate';
-            const slash = document.querySelector('#btn-notif-icon .notif-slash');
-            if (slash) {
-                slash.classList.toggle('visible', !newIsEnabled);
-            }
-        } catch (e) {
-            console.error("Errore toggle notifiche:", e);
-            showAlertModal("Errore", "Impossibile modificare le impostazioni delle notifiche.");
-        } finally {
-            delete notifCard.dataset.processing;
-        }
-    });
+        });
+    }
 
     document.getElementById('setting-weight-card').addEventListener('click', () => {
         const btn = document.getElementById('btn-weight-icon');
