@@ -119,12 +119,12 @@ const SystemNotifier = {
      */
     scheduleRestFinishedNotification({ endTime, routineName, nextExerciseName, setInfo, targetInfo }) {
         const notificationsEnabled = localStorage.getItem('notifications_enabled') !== 'false';
-        if (!notificationsEnabled || Notification.permission !== 'granted' || !this.isIOS || !('serviceWorker' in navigator) || !navigator.serviceWorker.controller) {
+        if (!notificationsEnabled || Notification.permission !== 'granted' || !('serviceWorker' in navigator) || !navigator.serviceWorker.controller) {
             return;
         }
 
         navigator.serviceWorker.controller.postMessage({
-            type: 'SCHEDULE_IOS_REST_NOTIFICATION',
+            type: 'SCHEDULE_REST_NOTIFICATION',
             endTime,
             routineName,
             nextExerciseName,
@@ -137,9 +137,9 @@ const SystemNotifier = {
      * Cancels any pending scheduled rest notification. (Primarily for iOS)
      */
     cancelScheduledRestNotification() {
-        if (!this.isIOS || !('serviceWorker' in navigator) || !navigator.serviceWorker.controller) {
+        if (!('serviceWorker' in navigator) || !navigator.serviceWorker.controller) {
             return;
         }
-        navigator.serviceWorker.controller.postMessage({ type: 'CANCEL_IOS_REST_NOTIFICATION' });
+        navigator.serviceWorker.controller.postMessage({ type: 'CANCEL_REST_NOTIFICATION' });
     }
 };

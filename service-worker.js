@@ -1,4 +1,4 @@
-const CACHE_NAME = 'one-percent-v94';
+const CACHE_NAME = 'one-percent-v95';
 const ASSETS_TO_CACHE = [
     './',
     './index.html',
@@ -113,7 +113,7 @@ self.addEventListener('message', (event) => {
     }
 
     // Gestisce la pianificazione della notifica di fine recupero per iOS
-    if (event.data && event.data.type === 'SCHEDULE_IOS_REST_NOTIFICATION') {
+    if (event.data && event.data.type === 'SCHEDULE_REST_NOTIFICATION') {
         // Annulla qualsiasi timer precedente
         if (restTimerTimeout) {
             clearTimeout(restTimerTimeout);
@@ -143,7 +143,7 @@ self.addEventListener('message', (event) => {
     }
 
     // Annulla una notifica di recupero pianificata
-    if (event.data && event.data.type === 'CANCEL_IOS_REST_NOTIFICATION') {
+    if (event.data && event.data.type === 'CANCEL_REST_NOTIFICATION') {
         if (restTimerTimeout) {
             clearTimeout(restTimerTimeout);
             restTimerTimeout = null;
