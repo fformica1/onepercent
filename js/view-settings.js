@@ -66,7 +66,7 @@ function renderSettings(fromHistory = false) {
                      <button id="btn-theme-icon" class="action-btn">${themeIcon}</button>
                 </div>
             </div>
-            <div class="routine-card" id="setting-notif-card" style="${isIOS ? 'display:none;' : ''}">
+            <div class="routine-card" id="setting-notif-card">
                 <div>
                     <h3>Notifiche</h3>
                     <small id="notif-status">${notifEnabled ? 'Abilitate' : 'Disabilitate'}</small>

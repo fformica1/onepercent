@@ -11,8 +11,6 @@ const SystemNotifier = {
      * @returns {Promise<boolean>} - True if permission is granted.
      */
     async requestPermission() {
-        if (this.isIOS) return false;
-
         if (!('Notification' in window)) {
             console.log("Questo browser non supporta le notifiche di sistema.");
             return false;
@@ -126,7 +124,7 @@ const SystemNotifier = {
         // Se l'app è in primo piano, evita la notifica di sistema (l'utente vede già il timer verde)
         if (document.visibilityState === 'visible') return;
 
-        if (Notification.permission !== 'granted' || this.isAndroid || this.isIOS || !('serviceWorker' in navigator)) {
+        if (Notification.permission !== 'granted' || this.isAndroid || !('serviceWorker' in navigator)) {
             return;
         }
 
